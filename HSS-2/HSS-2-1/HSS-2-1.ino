@@ -1,13 +1,13 @@
 #include "rgb_lcd.h"
 rgb_lcd lcd;
 #define giris5V A1
-#define giris24V A0
+#define giris12V A0
 #define buton 2
+#define buzzer A3
 float voltaj = 0;
 String hamVeri = ""; 
 int gelenAci = 0;
 int suankiKonum = 0;
-int metinlerArasiBekleme = 1000;
 
 void setup() {
   pinMode(buton, INPUT);
@@ -23,85 +23,85 @@ void setup() {
   lcd.clear();
   yaz("BMS SAVUNMA TEK.", 0);
   yaz("V1      V2     ", 1);
-  /*while(true){
-    kontrol5V();
-    kontrol24V();
-  }*/
-  
+  kontrol5V();//704
+  kontrol12V();//694
   delay(4000);
   lcd.clear();
   yaz("ANTEN TRAKER", 0);
   yaz("KALIBRASYON", 1);
+  delay(4000);
   for(int i = 0; i < 4; i++){ // buzzerCal isimli fonksiyon ile 4 saniye bekler.
     buzzerCal();
   }
-  delay(4000);
   lcd.clear();
   yaz("TERAZI", 0);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("Teraziyi duz", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("olmasi icin", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("ayarlayin. Duz", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("olunca butona", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme(); 
   yaz("basin.", 1);
+  metinlerArasiBekleme();
   while(!digitalRead(buton));
   for(int i = 0; i < 4; i++){ // Burada buton beklenecek
     buzzerCal();
   }
   lcd.clear();
   yaz("Y EKSENI", 0);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("Y Ekseni motoru", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("0 dereceye gelip", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("durdugunda zemin", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("ile paralel ise", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("butona basin.", 1);
+  metinlerArasiBekleme();
   while(!digitalRead(buton));
   for(int i = 0; i < 4; i++){ // Burada buton beklenecek
     buzzerCal();
   }
   lcd.clear();
   yaz("X EKSENI", 0);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("Pusulayi", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("yerlestirin.", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("X Ekseni motoru", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("0 dereceye gelip", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("durdugunda 0", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("dereceyi ucus", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("planinizin en", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("uzak kismina", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("getirmek icin", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("sehpayi donderin", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("Teraziyi kontrol", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("edin. Pusuladaki", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("kuzeyle olan aci", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("farkini PC'ye", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("girin butona", 1);
-  delay(metinlerArasiBekleme);
+  metinlerArasiBekleme();
   yaz("basin.", 1);
+  metinlerArasiBekleme();
   while(!digitalRead(buton));
   for(int i = 0; i < 4; i++){ // Burada buton beklenecek
     buzzerCal();
@@ -149,6 +149,7 @@ void yaz(String yazi, byte satir){
       lcd.setCursor(j, (satir % 2));
       lcd.print(" ");
     }
+    buzzerCal();
     lcd.setCursor(((16 - yazi.length()) / 2), (satir % 2));
     lcd.print(yazi);
   }else{
@@ -176,7 +177,7 @@ void ekranaYazdir(String mesaj, int x, int y){
 
 void ekranaYazdir(float voltaj, int x, int y){
   lcd.setCursor(x, y);
-  lcd.print(voltaj);
+  lcd.print(voltaj, 2);
 }
 
 void kontrol5V(){
@@ -185,27 +186,32 @@ void kontrol5V(){
   delay(200);
 }
 
-void kontrol24V(){
-  voltaj = voltajHesapla24V(); 
+void kontrol12V(){
+  voltaj = voltajHesapla12V(); 
   ekranaYazdir(voltaj, 11, 1);
   delay(200);
 }
 
 float voltajHesapla5V(){
   voltaj = analogRead(giris5V);
-  voltaj = voltaj * 0.005859; 
+  voltaj = voltaj * 0.007088068; 
   return voltaj;
 }
 
-float voltajHesapla24V(){
-  voltaj = analogRead(giris24V);
-  voltaj = voltaj * 0.0166; 
+float voltajHesapla12V(){
+  voltaj = analogRead(giris12V);
+  voltaj = voltaj * 0.01762247; 
   return voltaj;
 }
 
 void buzzerCal(){
-  /*digitalWrite(x, HIGH);
+  digitalWrite(buzzer, HIGH);
   delay(500);
-  digitalWrite(x, LOW);  
-  delay(500);*/
+  digitalWrite(buzzer, LOW);  
+  delay(500);
+}
+
+void metinlerArasiBekleme(){
+  buzzerCal();
+  buzzerCal();
 }
