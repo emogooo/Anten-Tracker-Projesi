@@ -18,7 +18,7 @@ void SM::_baslangic(){
   _yYonAyarla(HIGH);      // Değişken türü hata çıkarabilir.
   _xHiz = 500;
   _yHiz = 500;
-  hizAyarla(500,400);
+  hizAyarla(300,300);
   _xEkseniAdimSayisi = 0;
   _yEkseniAdimSayisi = 0;
   _xAdimSay();
@@ -96,17 +96,16 @@ void SM::_xTekilHareket(int gidilecekKonumunDerecesi){
   // Atılacak adımın belirlenmesi.
   _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
   // Hızların belirlenmesi.
-  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
+  if(_xGidilecekDereceSayisi < 8){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
     _xHareketIvmeAdimPayi = 20;
     _xHareketIvmeAdimBasinaDegisecekHiz = 10;
-    _xHiz = _xHizTutucu + 300;
-    _xGidilecekAdimSayisi = _xGidilecekAdimSayisi - 40;
-  }else{  // Uzun mesafe hareket 1/32 için minimum 280 adım. 100-100 ivme adım payı.
-    _xHareketIvmeAdimPayi = 100;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 2;
+    _xHiz = _xHizTutucu + 400;  
+  }else{  // Uzun mesafe hareket 1/32 için minimum 448 adım. 200-200 ivme adım payı.
+    _xHareketIvmeAdimPayi = 200;
+    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
     _xHiz = _xHizTutucu;
-    _xGidilecekAdimSayisi = _xGidilecekAdimSayisi - 200;
   }
+  _xGidilecekAdimSayisi = _xGidilecekAdimSayisi - (_xHareketIvmeAdimPayi * 2);
   // Hareket fonksiyonu.
   for(byte i = 0; i < _xHareketIvmeAdimPayi; i++){
     _xBirAdimAt();
@@ -135,17 +134,16 @@ void SM::_yTekilHareket(int gidilecekKonumunDerecesi){
   // Atılacak adımın belirlenmesi.
   _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
   // Hızların belirlenmesi.
-  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
+  if(_yGidilecekDereceSayisi < 8){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
     _yHareketIvmeAdimPayi = 20;
     _yHareketIvmeAdimBasinaDegisecekHiz = 10;
-    _yHiz = _yHizTutucu + 300;
-    _yGidilecekAdimSayisi = _yGidilecekAdimSayisi - 40;
-  }else{  // Uzun mesafe hareket 1/32 için minimum 280 adım. 100-100 ivme adım payı.
-    _yHareketIvmeAdimPayi = 100;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 2;
+    _yHiz = _yHizTutucu + 400;
+  }else{  // Uzun mesafe hareket 1/32 için minimum 448 adım. 200-200 ivme adım payı.
+    _yHareketIvmeAdimPayi = 200;
+    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
     _yHiz = _yHizTutucu;
-    _yGidilecekAdimSayisi = _yGidilecekAdimSayisi - 200;
   }
+  _yGidilecekAdimSayisi = _yGidilecekAdimSayisi - (_yHareketIvmeAdimPayi * 2);
   // Hareket fonksiyonu.
   for(byte i = 0; i < _yHareketIvmeAdimPayi; i++){
     _yBirAdimAt();
@@ -181,22 +179,22 @@ void SM::_cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerec
   _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
   _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
   //Hızların belirlenmesi.
-  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
+  if(_xGidilecekDereceSayisi < 8){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
     _xHareketIvmeAdimPayi = 20;
     _xHareketIvmeAdimBasinaDegisecekHiz = 10;
-    _xHiz = _xHizTutucu + 300;
-  }else{  // Uzun mesafe hareket 1/32 için minimum 280 adım. 100-100 ivme adım payı.
-    _xHareketIvmeAdimPayi = 100;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 2;
+    _xHiz = _xHizTutucu + 400;
+  }else{  // Uzun mesafe hareket 1/32 için minimum 448 adım. 200-200 ivme adım payı.
+    _xHareketIvmeAdimPayi = 200;
+    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
     _xHiz = _xHizTutucu;
   } 
-  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
+  if(_yGidilecekDereceSayisi < 8){  // Kısa mesafe hareket 1/32 için minimum 56 adım. 20-20 ivme adım payı.
     _yHareketIvmeAdimPayi = 20;
     _yHareketIvmeAdimBasinaDegisecekHiz = 10;
-    _yHiz = _yHizTutucu + 300;
-  }else{  // Uzun mesafe hareket 1/32 için minimum 280 adım. 100-100 ivme adım payı.
-    _yHareketIvmeAdimPayi = 100;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 2;
+    _yHiz = _yHizTutucu + 400;
+  }else{  // Uzun mesafe hareket 1/32 için minimum 448 adım. 200-200 ivme adım payı.
+    _yHareketIvmeAdimPayi = 200;
+    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
     _yHiz = _yHizTutucu;
   }
   // Hareket fonksiyonu.
