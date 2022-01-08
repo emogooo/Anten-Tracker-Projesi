@@ -1,0 +1,12 @@
+Dairesel Eksen Pinleri
+DIR Pini : D6
+Step Pini : D5
+Limit Pinlerinin karþýsýna geçtiðimizde,
+Sol Limit Pini : 10
+Sað Limit Pini : 9
+
+Yatay Eksen Pinleri
+DIR Pini : D8
+Step Pini : D7
+Dik Derece Limit Pini : 11
+0 Derece Limit Pini : 12

@@ -16,16 +16,13 @@ SM::SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SM
 void SM::_baslangic(){
   _xYonAyarla(HIGH);      // Değişken türü hata çıkarabilir.
   _yYonAyarla(HIGH);      // Değişken türü hata çıkarabilir.
-  _xHiz = 500;
-  _yHiz = 500;
+  _xHiz = 400;
+  _yHiz = 200;
   hizAyarla(300,300);
   _xEkseniAdimSayisi = 0;
   _yEkseniAdimSayisi = 0;
-  _xAdimSay();
-  _yAdimSay();
-  _xKonumDerecesi = 360;
-  _yKonumDerecesi = 225;
-  git(180,112);
+  _xKonumDerecesi = 0;
+  _yKonumDerecesi = 0;
 }
 
 void SM::_xBirAdimAt(){
@@ -42,7 +39,7 @@ void SM::_yBirAdimAt(){
   delayMicroseconds(_yHiz);
 }
 
-void SM::_xAdimSay(){
+void SM::xAdimSay(){
   while(digitalRead(_SMXLimit1Pin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!!
     _xBirAdimAt();
   }
@@ -52,26 +49,26 @@ void SM::_xAdimSay(){
     _xEkseniAdimSayisi++;
   }
   _xYonAyarla(HIGH);
-  for(byte i = 0; i < 5; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
+  for(int i = 0; i < 500; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
     _xBirAdimAt();
   }
-  _xEkseni1DereceIcinAdimSayisi = (_xEkseniAdimSayisi - 10) / 360.0;
+  _xEkseni1DereceIcinAdimSayisi = (_xEkseniAdimSayisi - 1000) / 360.0;
 }
 
-void SM::_yAdimSay(){
-  while(digitalRead(_SMYLimit1Pin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!!
+void SM::yAdimSay(){
+  while(digitalRead(_SMYLimit1Pin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!! Yukarı hareket ediyor
     _yBirAdimAt();
   }
   _yYonAyarla(LOW);
-  while(digitalRead(_SMYLimit2Pin) == LOW){
+  while(digitalRead(_SMYLimit2Pin) == LOW){         // Aşağı hareket ediyor 
     _yBirAdimAt();
     _yEkseniAdimSayisi++;
   }
   _yYonAyarla(HIGH);
-  for(byte i = 0; i < 5; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
+  for(int i = 0; i < 1000; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
     _yBirAdimAt();
   }
-  _yEkseni1DereceIcinAdimSayisi = (_yEkseniAdimSayisi - 10) / 225.0;
+  _yEkseni1DereceIcinAdimSayisi = (_yEkseniAdimSayisi - 2000) / 90;
 }
 
 void SM::_xYonAyarla(byte yon){
@@ -107,14 +104,14 @@ void SM::_xTekilHareket(int gidilecekKonumunDerecesi){
   }
   _xGidilecekAdimSayisi = _xGidilecekAdimSayisi - (_xHareketIvmeAdimPayi * 2);
   // Hareket fonksiyonu.
-  for(byte i = 0; i < _xHareketIvmeAdimPayi; i++){
+  for(unsigned int i = 0; i < _xHareketIvmeAdimPayi; i++){
     _xBirAdimAt();
     _xHiz = _xHiz - _xHareketIvmeAdimBasinaDegisecekHiz;
   }
-  for(byte i = 0; i < _xGidilecekAdimSayisi; i++){
+  for(unsigned int i = 0; i < _xGidilecekAdimSayisi; i++){
     _xBirAdimAt();
   }
-  for(byte i = 0; i < _xHareketIvmeAdimPayi; i++){
+  for(unsigned int i = 0; i < _xHareketIvmeAdimPayi; i++){
     _xBirAdimAt();
     _xHiz = _xHiz + _xHareketIvmeAdimBasinaDegisecekHiz;
   }  
@@ -145,14 +142,14 @@ void SM::_yTekilHareket(int gidilecekKonumunDerecesi){
   }
   _yGidilecekAdimSayisi = _yGidilecekAdimSayisi - (_yHareketIvmeAdimPayi * 2);
   // Hareket fonksiyonu.
-  for(byte i = 0; i < _yHareketIvmeAdimPayi; i++){
+  for(unsigned int i = 0; i < _yHareketIvmeAdimPayi; i++){
     _yBirAdimAt();
     _yHiz = _yHiz - _yHareketIvmeAdimBasinaDegisecekHiz;
   }
-  for(byte i = 0; i < _yGidilecekAdimSayisi; i++){
+  for(unsigned int i = 0; i < _yGidilecekAdimSayisi; i++){
     _yBirAdimAt();
   }
-  for(byte i = 0; i < _yHareketIvmeAdimPayi; i++){
+  for(unsigned int i = 0; i < _yHareketIvmeAdimPayi; i++){
     _yBirAdimAt();
     _yHiz = _yHiz + _yHareketIvmeAdimBasinaDegisecekHiz;
   }
@@ -234,12 +231,18 @@ void SM::hizAyarla(int xHiz, int yHiz){
   _yHizTutucu = yHiz;
 }
 
-void SM::git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi){
+void SM::git(unsigned int xGidilecekKonumunDerecesi, unsigned int yGidilecekKonumunDerecesi){
+  if(xGidilecekKonumunDerecesi > 350 || xGidilecekKonumunDerecesi < 0){
+    xGidilecekKonumunDerecesi = _xKonumDerecesi;
+  }
+  if(yGidilecekKonumunDerecesi > 89 || yGidilecekKonumunDerecesi < 0){
+    yGidilecekKonumunDerecesi = _yKonumDerecesi;
+  }
   if(xGidilecekKonumunDerecesi != _xKonumDerecesi && yGidilecekKonumunDerecesi != _yKonumDerecesi){
     _cifteHareket(xGidilecekKonumunDerecesi, yGidilecekKonumunDerecesi);
   }else if(xGidilecekKonumunDerecesi != _xKonumDerecesi){
     _xTekilHareket(xGidilecekKonumunDerecesi);
-  }else{
+  }else if(yGidilecekKonumunDerecesi != _yKonumDerecesi){
     _yTekilHareket(yGidilecekKonumunDerecesi);
   }
 }
