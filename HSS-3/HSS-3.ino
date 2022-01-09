@@ -5,28 +5,29 @@
 #define giris12V A0
 #define buton 2
 #define buzzer A3
-#define SMXLimit1Pin 10
-#define SMXLimit2Pin 9
-#define SMYLimit1Pin 11
-#define SMYLimit2Pin 12
+#define SMX350DereceLimitPin 10
+#define SMX0DereceLimitPin 9
+#define SMY90DereceLimitPin 11
+#define SMY0DereceLimitPin 12
 #define SMXDirPin 6
 #define SMXStepPin 5
 #define SMYDirPin 8
 #define SMYStepPin 7
 #define kesmePinDegeri 1 // Kartta 3. pin, fakat sistem bunu 1 olarak okuyor.
 rgb_lcd lcd;
-SM stepMotorlar(SMXStepPin, SMXDirPin, SMYStepPin, SMYDirPin, SMXLimit1Pin, SMXLimit2Pin, SMYLimit1Pin, SMYLimit2Pin);
+SM stepMotorlar(SMXStepPin, SMXDirPin, SMYStepPin, SMYDirPin, SMX350DereceLimitPin, SMX0DereceLimitPin, SMY90DereceLimitPin, SMY0DereceLimitPin);
 String hamVeri = "";
 char veriBirimi;
-int gidilecekDereceMotorX = 0;
-int gidilecekDereceMotorY = 0;
+unsigned int gidilecekDereceMotorX = 0;
+unsigned int gidilecekDereceMotorY = 0;
 
 void setup() {
-  pinMode(buton, INPUT);
-  //attachInterrupt(kesmePinDegeri, limitSwitchInterrupt, RISING);
+  pinMode(buton, INPUT); 
   lcd.begin(16, 2);
   lcd.clear();  
   kalibrasyon();
+  stepMotorlar.hizAyarla(300, 300);
+  //attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
   Serial.begin(9600);
   yaz("  X          Y  ", 0);
   
@@ -44,14 +45,14 @@ void loop() {
   }
 }
 
-void limitSwitchInterrupt(){
-  if(digitalRead(SMXLimit1Pin) == HIGH){
+void limitKesmeFonksiyonu(){
+  if(digitalRead(SMX350DereceLimitPin) == HIGH){
     
-  }else if(digitalRead(SMXLimit2Pin) == HIGH){
+  }else if(digitalRead(SMX0DereceLimitPin) == HIGH){
     
-  }else if(digitalRead(SMYLimit1Pin) == HIGH){
+  }else if(digitalRead(SMY90DereceLimitPin) == HIGH){
     
-  }else if(digitalRead(SMYLimit2Pin) == HIGH){
+  }else if(digitalRead(SMY0DereceLimitPin) == HIGH){
     
   }
 }
@@ -61,7 +62,7 @@ void veriIsle(){
   noktaIndisi = hamVeri.indexOf('.' , 1);
   gidilecekDereceMotorX = (hamVeri.substring(0,noktaIndisi)).toInt();
   gidilecekDereceMotorY = (hamVeri.substring((noktaIndisi + 1), (hamVeri.length() - 2))).toInt();
-  hamVeri = "";
+  hamVeri = "";  
 }
 
 void yaz(String yazi, byte satir){
@@ -73,45 +74,43 @@ void yaz(String yazi, byte satir){
   lcd.print(yazi);
 }
 
-void voltajYazdir(float voltaj, int x, int y){
-  lcd.setCursor(x, y);
-  lcd.print(voltaj, 2);
-}
-
 float kontrol5V(){
-  float voltaj5 = analogRead(giris5V);
-  voltaj5 = voltaj5 * 0.007088068; 
-  voltajYazdir(voltaj5, 3, 1);
-  delay(200);
-  return voltaj5;
+  float voltaj = analogRead(giris5V);
+  voltaj = voltaj * 0.007088068; 
+  lcd.setCursor(3, 1);
+  lcd.print(voltaj, 2);
+  return voltaj;
 }
 
 float kontrol12V(){
-  float voltaj12 = analogRead(giris12V);
-  voltaj12 = voltaj12 * 0.01762247; 
-  voltajYazdir(voltaj12, 11, 1);
-  delay(200);
-  return voltaj12;
+  float voltaj = analogRead(giris12V);
+  voltaj = voltaj * 0.01762247; 
+  lcd.setCursor(11, 1);
+  lcd.print(voltaj, 2);
+  return voltaj;
 }
 
-bool butonDinle(int saniye){
+bool butonDinle(unsigned int saniye){
   unsigned long baslangic = millis();
   while(millis() - baslangic <= saniye * 1000){
         if(digitalRead(buton)){
-          buzzerOnay();
+          buzzerOlumlu();
           return true;
         }
   }
   return false;
 }
 
-void buzzerCal(){
-  digitalWrite(buzzer, HIGH);
-  delay(500);
-  digitalWrite(buzzer, LOW);  
-  delay(500);
+void buzzerCal(unsigned int ms, unsigned int adet){
+  for(unsigned int i = 0; i < adet; i++){
+    digitalWrite(buzzer, HIGH);
+    delay(ms);
+    digitalWrite(buzzer, LOW);  
+    delay(ms);
+  }
 }
-void buzzerOnay(){
+
+void buzzerOlumlu(){
   digitalWrite(buzzer, HIGH);
   delay(500);
   digitalWrite(buzzer, LOW);
@@ -126,95 +125,69 @@ void buzzerOnay(){
   delay(1000);
 }
 
-void metinlerArasiBuzzerlaBekleme(){
-  for(int i = 0; i < 2; i++){
-    buzzerCal();
-  }
-}
-
 void kalibrasyon(){
-  bool butonKontrol = false;
-  int metinlerArasiBeklemeSuresi = 2000;
+  int metinlerArasiBeklemeSuresi = 3000;
   yaz("BMS SAVUNMA", 0);
   yaz("TEKNOLOJILERI", 1);
-  delay(metinlerArasiBeklemeSuresi * 1.5);
-  lcd.clear();
+  delay(metinlerArasiBeklemeSuresi);
   yaz("ANTEN TRAKER", 0);
   yaz("VERSIYON 1.0", 1);
-  delay(metinlerArasiBeklemeSuresi * 1.5);
-  lcd.clear();
+  delay(metinlerArasiBeklemeSuresi);
   yaz("BMS SAVUNMA TEK.", 0);
   yaz("V1      V2     ", 1);
   float voltaj5 = kontrol5V();
   float voltaj12 = kontrol12V();
-  delay(metinlerArasiBeklemeSuresi * 1.5);
-  lcd.clear();
+  delay(metinlerArasiBeklemeSuresi);
   if((voltaj12 > 10.5 && voltaj12 < 14) && (voltaj5 > 4.5 && voltaj5 < 5.3)){
       yaz("BMS SAVUNMA TEK.", 0);
       yaz("VOLTAJLAR UYGUN", 1);
       delay(metinlerArasiBeklemeSuresi);
-      buzzerOnay();
-      lcd.clear();
+      buzzerOlumlu();
   }else{
       yaz("BMS SAVUNMA TEK.", 0);
       yaz("VOLTAJ ARIZASI", 1);
       while(true){
-        digitalWrite(buzzer, HIGH);
-        delay(250);
-        digitalWrite(buzzer, LOW);  
-        delay(250);
+        buzzerCal(250, 1);
       }      
   }
   yaz("ANTEN TRAKER", 0);
   yaz("KALIBRASYON", 1);
-  metinlerArasiBuzzerlaBekleme();
-  lcd.clear();
+  buzzerCal(500,3);
   yaz("Y EKSENI", 0);
-  buzzerCal();
   yaz("KALIBRASYON", 1);
-  buzzerCal();
-  metinlerArasiBuzzerlaBekleme();
-  stepMotorlar.yAdimSay();
-  buzzerOnay();
-  lcd.clear();
+  buzzerCal(500,3);
+  stepMotorlar.SMYKalibrasyon();
+  buzzerOlumlu();
+  bool butonKontrol = false;
   yaz("X EKSENI", 0);
-  buzzerCal();
   yaz("KALIBRASYON", 1);
-  buzzerCal();
-  metinlerArasiBuzzerlaBekleme();
-  stepMotorlar.xAdimSay();
+  buzzerCal(500,3);
+  stepMotorlar.SMXKalibrasyon();
+  stepMotorlar.git(175,0);
   while(true){
     yaz("Anteni IHA'ya", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("cevirin.", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("Pusuladaki", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("kuzeyle olan aci", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("farkini PC'ye", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("girin ve", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     yaz("butona basin.", 1);
-    buzzerCal();
-    metinlerArasiBuzzerlaBekleme();
+    buzzerCal(500,3);
     butonKontrol = butonDinle(5);
     if(butonKontrol){
       break;  
     }
   }
   delay(metinlerArasiBeklemeSuresi);
-  lcd.clear();
   yaz("KALIBRASYON", 0);
   yaz("TAMAMLANDI", 1);
   delay(metinlerArasiBeklemeSuresi);
-  buzzerOnay();
+  buzzerOlumlu();
   lcd.clear();
 }
