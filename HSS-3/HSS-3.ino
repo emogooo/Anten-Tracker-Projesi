@@ -74,22 +74,6 @@ void yaz(String yazi, byte satir){
   lcd.print(yazi);
 }
 
-float kontrol5V(){
-  float voltaj = analogRead(giris5V);
-  voltaj = voltaj * 0.007088068; 
-  lcd.setCursor(3, 1);
-  lcd.print(voltaj, 2);
-  return voltaj;
-}
-
-float kontrol12V(){
-  float voltaj = analogRead(giris12V);
-  voltaj = voltaj * 0.01762247; 
-  lcd.setCursor(11, 1);
-  lcd.print(voltaj, 2);
-  return voltaj;
-}
-
 bool butonDinle(unsigned int saniye){
   unsigned long baslangic = millis();
   while(millis() - baslangic <= saniye * 1000){
@@ -135,8 +119,14 @@ void kalibrasyon(){
   delay(metinlerArasiBeklemeSuresi);
   yaz("BMS SAVUNMA TEK.", 0);
   yaz("V1      V2     ", 1);
-  float voltaj5 = kontrol5V();
-  float voltaj12 = kontrol12V();
+  float voltaj5 = analogRead(giris5V);
+  voltaj5 = voltaj5 * 0.007088068; 
+  float voltaj12 = analogRead(giris12V);
+  voltaj12 = voltaj12 * 0.01762247; 
+  lcd.setCursor(3, 1);
+  lcd.print(voltaj5, 2);
+  lcd.setCursor(11, 1);
+  lcd.print(voltaj12, 2);
   delay(metinlerArasiBeklemeSuresi);
   if((voltaj12 > 10.5 && voltaj12 < 14) && (voltaj5 > 4.5 && voltaj5 < 5.3)){
       yaz("BMS SAVUNMA TEK.", 0);
@@ -163,6 +153,7 @@ void kalibrasyon(){
   yaz("KALIBRASYON", 1);
   buzzerCal(500,3);
   stepMotorlar.SMXKalibrasyon();
+  stepMotorlar.hizAyarla(600,300);
   stepMotorlar.git(175,0);
   while(true){
     yaz("Anteni IHA'ya", 1);

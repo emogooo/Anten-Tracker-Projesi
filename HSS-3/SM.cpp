@@ -9,7 +9,7 @@ SM::SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SM
   _SMX0DereceLimitPin = SMX0DereceLimitPin;
   _SMY90DereceLimitPin = SMY90DereceLimitPin;
   _SMY0DereceLimitPin = SMY0DereceLimitPin;
-  hizAyarla(500,500); // Kalibrasyondan sonraki hareket hızı
+  hizAyarla(300,300); // Kalibrasyondan sonraki hareket hızı
 }
 
 void SM::_xBirAdimAt(){
@@ -42,7 +42,7 @@ void SM::SMXKalibrasyon(){
   for(int i = 0; i < 500; i++){                     // Limit Butona baskı yapmaması için 500 adım geri döner. Burada ki 500 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
     _xBirAdimAt();
   }
-  _xEkseni1DereceIcinAdimSayisi = (_xEkseniAdimSayisi - 1000) / 350;
+  _xEkseni1DereceIcinAdimSayisi = (_xEkseniAdimSayisi - 1000) / 350.0;
   _xKonumDerecesi = 0;
 }
 
@@ -62,7 +62,7 @@ void SM::SMYKalibrasyon(){
   for(int i = 0; i < 1000; i++){                     // Limit Butona baskı yapmaması için 1000 adım geri döner. Burada ki 1000 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
     _yBirAdimAt();
   }
-  _yEkseni1DereceIcinAdimSayisi = (_yEkseniAdimSayisi - 2000) / 90;
+  _yEkseni1DereceIcinAdimSayisi = (_yEkseniAdimSayisi - 2000) / 90.0;
   _yKonumDerecesi = 0;
 }
 
@@ -202,6 +202,9 @@ void SM::_cifteHareket(unsigned int xGidilecekKonumunDerecesi, unsigned int yGid
       _xBirAdimAt();
       _xGidilenAdimSayisi++;
     }else{
+      if(_xHiz > 100){
+        _xHiz = _xHiz - 2;
+      } 
       delayMicroseconds(_xHiz * 2);
     }
     if((_yGidilecekAdimSayisi - _yGidilenAdimSayisi) > 0){
@@ -213,6 +216,9 @@ void SM::_cifteHareket(unsigned int xGidilecekKonumunDerecesi, unsigned int yGid
       _yBirAdimAt();
       _yGidilenAdimSayisi++;
     }else{
+      if(_yHiz > 100){
+        _yHiz = _yHiz - 2;  
+      }
       delayMicroseconds(_yHiz * 2);
     }
   }
