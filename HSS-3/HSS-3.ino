@@ -18,19 +18,20 @@ rgb_lcd lcd;
 SM stepMotorlar(SMXStepPin, SMXDirPin, SMYStepPin, SMYDirPin, SMX350DereceLimitPin, SMX0DereceLimitPin, SMY90DereceLimitPin, SMY0DereceLimitPin);
 String hamVeri = "";
 char veriBirimi;
-unsigned int gidilecekDereceMotorX = 0;
-unsigned int gidilecekDereceMotorY = 0;
+int gidilecekDereceMotorX = 0;
+int gidilecekDereceMotorY = 0;
+unsigned long xLimitSonCalismaZamani = 0;
+unsigned long yLimitSonCalismaZamani = 0;
 
 void setup() {
-  pinMode(buton, INPUT); 
+  pinMode(buton, INPUT);
   lcd.begin(16, 2);
   lcd.clear();  
   kalibrasyon();
-  stepMotorlar.hizAyarla(300, 300);
-  //attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
+  stepMotorlar.hizAyarla(300,300);
+  attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
   Serial.begin(9600);
-  yaz("  X          Y  ", 0);
-  
+  yaz("  Y          X  ", 0);
 }
 
 void loop() {
@@ -39,21 +40,25 @@ void loop() {
     hamVeri += veriBirimi;
     if (veriBirimi == '\n') {
       veriIsle();
-      yaz((String(gidilecekDereceMotorX) + "          " + String(gidilecekDereceMotorY)), 1);     
+      yaz((String(gidilecekDereceMotorY) + "          " + String(gidilecekDereceMotorX)), 1);     
       stepMotorlar.git(gidilecekDereceMotorX, gidilecekDereceMotorY);
     } 
   }
 }
 
 void limitKesmeFonksiyonu(){
-  if(digitalRead(SMX350DereceLimitPin) == HIGH){
-    
-  }else if(digitalRead(SMX0DereceLimitPin) == HIGH){
-    
-  }else if(digitalRead(SMY90DereceLimitPin) == HIGH){
-    
-  }else if(digitalRead(SMY0DereceLimitPin) == HIGH){
-    
+  if(digitalRead(SMX350DereceLimitPin) == HIGH && millis() - xLimitSonCalismaZamani > 1000 ){
+    stepMotorlar.yonDegistir(true);
+    xLimitSonCalismaZamani = millis();
+  }else if(digitalRead(SMX0DereceLimitPin) == HIGH && millis() - xLimitSonCalismaZamani > 1000 ){
+    stepMotorlar.yonDegistir(true);
+    xLimitSonCalismaZamani = millis();
+  }else if(digitalRead(SMY90DereceLimitPin) == HIGH && millis() - yLimitSonCalismaZamani > 1000 ){
+    stepMotorlar.yonDegistir(false);
+    yLimitSonCalismaZamani = millis();
+  }else if(digitalRead(SMY0DereceLimitPin) == HIGH && millis() - yLimitSonCalismaZamani > 1000 ){
+    stepMotorlar.yonDegistir(false);
+    yLimitSonCalismaZamani = millis();
   }
 }
 
@@ -62,7 +67,7 @@ void veriIsle(){
   noktaIndisi = hamVeri.indexOf('.' , 1);
   gidilecekDereceMotorX = (hamVeri.substring(0,noktaIndisi)).toInt();
   gidilecekDereceMotorY = (hamVeri.substring((noktaIndisi + 1), (hamVeri.length() - 2))).toInt();
-  hamVeri = "";  
+  hamVeri = "";
 }
 
 void yaz(String yazi, byte satir){
@@ -156,7 +161,7 @@ void kalibrasyon(){
   stepMotorlar.hizAyarla(600,300);
   stepMotorlar.git(175,0);
   while(true){
-    yaz("Anteni IHA'ya", 1);
+    yaz("Sehpayi IHA'ya", 1);
     buzzerCal(500,3);
     yaz("cevirin.", 1);
     buzzerCal(500,3);
