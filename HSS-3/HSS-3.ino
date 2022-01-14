@@ -28,7 +28,8 @@ void setup() {
   lcd.begin(16, 2);
   lcd.clear();  
   kalibrasyon();
-  stepMotorlar.hizAyarla(300,300);
+  stepMotorlar.xHizAyarla(100,500);
+  stepMotorlar.yHizAyarla(100,500);
   attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
   Serial.begin(9600);
   yaz("  Y          X  ", 0);
@@ -158,7 +159,7 @@ void kalibrasyon(){
   yaz("KALIBRASYON", 1);
   buzzerCal(500,3);
   stepMotorlar.SMXKalibrasyon();
-  stepMotorlar.hizAyarla(600,300);
+  stepMotorlar.xHizAyarla(100,400);
   stepMotorlar.git(175,0);
   while(true){
     yaz("Sehpayi IHA'ya", 1);

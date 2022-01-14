@@ -14,8 +14,10 @@ class SM{
   byte _SMYDir;
   int _xHiz;
   int _yHiz;
-  int _xHizTutucu;
-  int _yHizTutucu;
+  int _xYavasHiz;
+  int _xHizliHiz;
+  int _yYavasHiz;
+  int _yHizliHiz;
   unsigned long _xEkseniAdimSayisi;
   unsigned long _yEkseniAdimSayisi;
   int _xKonumDerecesi;
@@ -34,6 +36,8 @@ class SM{
   unsigned long _yEkseni1DereceIcinAdimSayisi;
   void _xBirAdimAt();
   void _yBirAdimAt();
+  void _xCifteHareketBirAdimAt();
+  void _yCifteHareketBirAdimAt();
   void _xYonAyarla(byte yon);
   void _yYonAyarla(byte yon);
   void _xTekilHareket(int gidilecekKonumunDerecesi);
@@ -45,6 +49,7 @@ class SM{
   unsigned long SMXKalibrasyon();
   unsigned long SMYKalibrasyon();
   void yonDegistir(bool kontrol);
-  void hizAyarla(int xHiz, int yHiz);
+  void xHizAyarla(int yavasHiz, int hizliHiz);
+  void yHizAyarla(int yavasHiz, int hizliHiz);
   void git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi); 
 };
