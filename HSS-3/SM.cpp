@@ -9,8 +9,8 @@ SM::SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SM
   _SMX0DereceLimitPin = SMX0DereceLimitPin;
   _SMY90DereceLimitPin = SMY90DereceLimitPin;
   _SMY0DereceLimitPin = SMY0DereceLimitPin;
-  xHizAyarla(500,1000);
-  yHizAyarla(500,1000);
+  xHizAyarla(100,200);
+  yHizAyarla(100,200);
 }
 
 void SM::_xBirAdimAt(){
@@ -41,7 +41,7 @@ void SM::_yCifteHareketBirAdimAt(){
 
 unsigned long SM::SMXKalibrasyon(){
   _xYonAyarla(HIGH);
-  _xHiz = 400;
+  _xHiz = 50;
   _xEkseniAdimSayisi = 0;
   while(digitalRead(_SMX350DereceLimitPin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!!
     _xBirAdimAt();
@@ -61,7 +61,7 @@ unsigned long SM::SMXKalibrasyon(){
 }
 unsigned long SM::SMYKalibrasyon(){
   _yYonAyarla(HIGH);
-  _yHiz = 200;
+  _yHiz = 50;
   _yEkseniAdimSayisi = 0;
   while(digitalRead(_SMY90DereceLimitPin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!! Yukarı hareket ediyor
     _yBirAdimAt();
