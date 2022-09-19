@@ -1,7 +1,7 @@
 #include "Arduino.h"
 
-class SM{
-  private:
+class SM {
+private:
   byte _SMXStepPin;
   byte _SMXDirPin;
   byte _SMYStepPin;
@@ -45,13 +45,13 @@ class SM{
   void _xTekilHareket(int gidilecekKonumunDerecesi);
   void _yTekilHareket(int gidilecekKonumunDerecesi);
   void _cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi);
-  
-  public:
+
+public:
   SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SMXEndLimitPin, byte SMX0DereceLimitPin, byte SMYEndLimitPin, byte SMYStartLimitPin, unsigned int xEkseniDerecesi, unsigned int yEkseniDerecesi);
   unsigned long SMXKalibrasyon();
   unsigned long SMYKalibrasyon();
   void yonDegistir(bool kontrol);
   void xHizAyarla(int yavasHiz, int hizliHiz);
   void yHizAyarla(int yavasHiz, int hizliHiz);
-  void git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi); 
+  void git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi);
 };
