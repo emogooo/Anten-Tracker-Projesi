@@ -6,10 +6,10 @@ class SM{
   byte _SMXDirPin;
   byte _SMYStepPin;
   byte _SMYDirPin;
-  byte _SMX350DereceLimitPin;
-  byte _SMX0DereceLimitPin;
-  byte _SMY90DereceLimitPin;
-  byte _SMY0DereceLimitPin;
+  byte _SMXEndLimitPin;
+  byte _SMXStartLimitPin;
+  byte _SMYEndLimitPin;
+  byte _SMYStartLimitPin;
   byte _SMXDir;
   byte _SMYDir;
   int _xHiz;
@@ -18,6 +18,8 @@ class SM{
   int _xHizliHiz;
   int _yYavasHiz;
   int _yHizliHiz;
+  int _xEkseniDerecesi;
+  int _yEkseniDerecesi;
   unsigned long _xEkseniAdimSayisi;
   unsigned long _yEkseniAdimSayisi;
   int _xKonumDerecesi;
@@ -45,7 +47,7 @@ class SM{
   void _cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi);
   
   public:
-  SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SMX350DereceLimitPin, byte SMX0DereceLimitPin, byte SMY90DereceLimitPin, byte SMY0DereceLimitPin);
+  SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SMXEndLimitPin, byte SMX0DereceLimitPin, byte SMYEndLimitPin, byte SMYStartLimitPin, unsigned int xEkseniDerecesi, unsigned int yEkseniDerecesi);
   unsigned long SMXKalibrasyon();
   unsigned long SMYKalibrasyon();
   void yonDegistir(bool kontrol);
