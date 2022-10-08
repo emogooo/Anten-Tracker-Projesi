@@ -18,7 +18,6 @@
 rgb_lcd lcd;
 SM stepMotorlar(SMXStepPin, SMXDirPin, SMYStepPin, SMYDirPin, SMX350DereceLimitPin, SMX0DereceLimitPin, SMY90DereceLimitPin, SMY0DereceLimitPin);
 String hamVeri = "";
-char veriBirimi;
 int gidilecekDereceMotorX = 0;
 int gidilecekDereceMotorY = 0;
 unsigned long xLimitSonCalismaZamani = 0;
@@ -41,14 +40,13 @@ void loop() {
   if(digitalRead(parkButonu) == HIGH){
     stepMotorlar.git(151, 0);
   }
-  while (Serial.available()) {
-    veriBirimi = (char)Serial.read(); 
-    hamVeri += veriBirimi;
-    if (veriBirimi == '\n') {
-      veriIsle();
+
+  if(Serial.available()){
+    hamVeri = Serial.readString();
+    if(veriIsle()){
       yaz((String(gidilecekDereceMotorY) + "          " + String(gidilecekDereceMotorX)), 1);     
       stepMotorlar.git(gidilecekDereceMotorX, gidilecekDereceMotorY);
-    } 
+    }
   }
 }
 
@@ -68,12 +66,23 @@ void limitKesmeFonksiyonu(){
   }
 }
 
-void veriIsle(){
-  int noktaIndisi = 0;
-  noktaIndisi = hamVeri.indexOf('.' , 1);
-  gidilecekDereceMotorX = (hamVeri.substring(0,noktaIndisi)).toInt();
-  gidilecekDereceMotorY = (hamVeri.substring((noktaIndisi + 1), (hamVeri.length() - 2))).toInt();
-  hamVeri = "";
+bool veriIsle(){
+  int startIndex = hamVeri.indexOf('#');
+  if(startIndex == -1){
+    return false;
+  }
+  int  endIndex = hamVeri.indexOf('*', startIndex);
+  if(endIndex == -1 || endIndex - startIndex > 8){
+    return false;
+  }
+  hamVeri = hamVeri.substring(startIndex + 1, endIndex);
+  int dotIndex = hamVeri.indexOf('.');
+  if(dotIndex == -1){
+    return false;
+  }
+  gidilecekDereceMotorX = (hamVeri.substring(0,dotIndex)).toInt();
+  gidilecekDereceMotorY = (hamVeri.substring((dotIndex + 1), (hamVeri.length()))).toInt();
+  return true;
 }
 
 void yaz(String yazi, byte satir){
@@ -166,7 +175,7 @@ void kalibrasyon(){
   stepMotorlar.SMXKalibrasyon();
   stepMotorlar.xHizAyarla(30,60);
   stepMotorlar.git(155,0);
-  while(true){
+  /*while(true){
     yaz("Sehpayi IHA'ya", 1);
     buzzerCal(500,3);
     yaz("cevirin.", 1);
@@ -185,7 +194,7 @@ void kalibrasyon(){
     if(butonKontrol){
       break;  
     }
-  }
+  }*/
   delay(metinlerArasiBeklemeSuresi);
   yaz("KALIBRASYON", 0);
   yaz("TAMAMLANDI", 1);
