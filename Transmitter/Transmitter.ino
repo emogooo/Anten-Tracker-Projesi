@@ -5,6 +5,7 @@ LiquidCrystal lcd(12, 11, 6, 5, 4, 3);
 #define yPin A1
 int valueX = 0;
 int valueY = 0;
+String dataToBeSent;
 
 void setup() {
   lcd.begin(16, 2);
@@ -22,14 +23,14 @@ void loop() {
   valueX = analogRead(xPin) * 0.3027343;  // 0 -309
   valueY = analogRead(yPin) * 0.1220703;  // 0 - 124;
   printDegree(valueX, 11, 14, true);
-  printDegree(valueY, 2, 4, false);
+  printDegree(valueY, 1, 5, false);
   if (digitalRead(button)) {
-    Serial.print(valueX);
-    Serial.print(".");
-    Serial.println(valueY);
+    dataToBeSent = "#" + String(valueX) + "." + String(valueY) + "*";
+    Serial.println(dataToBeSent);
     lcd.setCursor(7, 0);
     lcd.print("+");
     delay(250);
+    lcd.setCursor(7, 0);
     lcd.print(" ");
   }
 }
