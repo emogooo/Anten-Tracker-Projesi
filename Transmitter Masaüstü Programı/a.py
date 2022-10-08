@@ -1,7 +1,5 @@
 from tkinter import *
 from tkinter import messagebox
-import os
-import serial
 import time
 
 class App():

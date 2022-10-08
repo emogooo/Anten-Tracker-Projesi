@@ -1,6 +1,7 @@
 #include "SM.h"
 #include "rgb_lcd.h"
 #include <SoftwareSerial.h>
+#define bataryaOlcumPin A2
 #define giris5V A1
 #define giris12V A0
 #define buton 2
@@ -22,8 +23,15 @@ int gidilecekDereceMotorX = 0;
 int gidilecekDereceMotorY = 0;
 unsigned long xLimitSonCalismaZamani = 0;
 unsigned long yLimitSonCalismaZamani = 0;
+byte batLevel[8];
+float voltage;
+float lastVoltage;
+bool emergencyBuzzerControl;
 
 void setup() {
+  batLevel[0] = B01110;
+  lastVoltage = -1;
+  emergencyBuzzerControl = false;
   pinMode(buton, INPUT);
   pinMode(buzzer, OUTPUT);
   lcd.begin(16, 2);
@@ -34,11 +42,28 @@ void setup() {
   attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
   Serial.begin(9600);
   yaz("  Y          X  ", 0);
+  yaz(" 0         155", 1);
 }
 
 void loop() {
+  voltage = analogRead(bataryaOlcumPin) * 0.0278662;
+  if (abs(voltage - lastVoltage) > 0.2) {
+    getBatteryLevel(voltage);
+    lastVoltage = voltage;
+    if (voltage <= 20) {
+      emergencyBuzzerControl = true;
+    } else {
+      emergencyBuzzerControl = false;
+    }
+  }
+
+  if(emergencyBuzzerControl){
+    buzzerCal(250, 1);
+  }
+
   if(digitalRead(parkButonu) == HIGH){
     stepMotorlar.git(151, 0);
+    yaz(" 0         151", 1);
   }
 
   if(Serial.available()){
@@ -142,13 +167,19 @@ void kalibrasyon(){
   float voltaj5 = analogRead(giris5V);
   voltaj5 = voltaj5 * 0.007088068; 
   float voltaj12 = analogRead(giris12V);
-  voltaj12 = voltaj12 * 0.01762247; 
+  voltaj12 = (voltaj12 * 0.015625) + 0.7; // 0.7 diyot kırılma voltajı. 
   lcd.setCursor(3, 1);
   lcd.print(voltaj5, 2);
   lcd.setCursor(11, 1);
   lcd.print(voltaj12, 2);
   delay(metinlerArasiBeklemeSuresi);
-  if(true){//(voltaj12 > 10.5 && voltaj12 < 14) && (voltaj5 > 4.5 && voltaj5 < 5.3)
+  yaz("BATARYA V       ", 1);
+  float voltajBatarya = analogRead(bataryaOlcumPin);
+  voltajBatarya = voltajBatarya * 0.0278662;
+  lcd.setCursor(11, 1);
+  lcd.print(voltajBatarya, 2);
+  delay(metinlerArasiBeklemeSuresi);
+  if((voltaj12 > 10.5 && voltaj12 < 14) && (voltaj5 > 4.5 && voltaj5 < 5.3) && voltajBatarya > 20 ){
       yaz("BMS SAVUNMA TEK.", 0);
       yaz("VOLTAJLAR UYGUN", 1);
       delay(metinlerArasiBeklemeSuresi);
@@ -160,7 +191,7 @@ void kalibrasyon(){
         buzzerCal(250, 1);
       }      
   }
-  yaz("ANTEN TRAKER", 0);
+  yaz("ANTEN TRACKER", 0);
   yaz("KALIBRASYON", 1);
   buzzerCal(500,3);
   yaz("Y EKSENI", 0);
@@ -175,7 +206,7 @@ void kalibrasyon(){
   stepMotorlar.SMXKalibrasyon();
   stepMotorlar.xHizAyarla(30,60);
   stepMotorlar.git(155,0);
-  /*while(true){
+  while(true){
     yaz("Sehpayi IHA'ya", 1);
     buzzerCal(500,3);
     yaz("cevirin.", 1);
@@ -194,11 +225,44 @@ void kalibrasyon(){
     if(butonKontrol){
       break;  
     }
-  }*/
+  }
   delay(metinlerArasiBeklemeSuresi);
   yaz("KALIBRASYON", 0);
   yaz("TAMAMLANDI", 1);
   delay(metinlerArasiBeklemeSuresi);
   buzzerOlumlu();
   lcd.clear();
+}
+
+void getBatteryLevel(float curvolt) {
+  if (curvolt >= 23.5) {
+    batLevel[1] = B11111;
+    batLevel[2] = B11111;
+    batLevel[3] = B11111;
+    batLevel[4] = B11111;
+    batLevel[5] = B11111;
+    batLevel[6] = B11111;
+    batLevel[7] = B11111;
+  }
+  if (curvolt < 23.5 && curvolt > 20) {
+    batLevel[1] = B10001;
+    batLevel[2] = B10001;
+    batLevel[3] = B10001;
+    batLevel[4] = B11111;
+    batLevel[5] = B11111;
+    batLevel[6] = B11111;
+    batLevel[7] = B11111;
+  }
+  if (curvolt <= 20) {
+    batLevel[1] = B10001;
+    batLevel[2] = B10001;
+    batLevel[3] = B10001;
+    batLevel[4] = B10001;
+    batLevel[5] = B10001;
+    batLevel[6] = B10001;
+    batLevel[7] = B11111;
+  }
+  lcd.createChar(0, batLevel);
+  lcd.setCursor(7, 0);
+  lcd.write(byte(0));
 }
