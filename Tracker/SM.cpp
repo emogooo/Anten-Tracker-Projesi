@@ -102,9 +102,9 @@ void SM::_xTekilHareket(int gidilecekKonumunDerecesi){
   // Atılacak adımın belirlenmesi.
   _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
   // Hızların belirlenmesi.
-  if(_xGidilecekAdimSayisi < 1200){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 2;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 10;
+  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 4;
+    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
     _xHiz = _xYavasHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz); 
   }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
     _xHareketIvmeAdimPayi = 600;
@@ -140,9 +140,9 @@ void SM::_yTekilHareket(int gidilecekKonumunDerecesi){
   // Atılacak adımın belirlenmesi.
   _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
   // Hızların belirlenmesi.
-  if(_yGidilecekAdimSayisi < 1200){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 2;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 10;
+  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 4;
+    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
     _yHiz = _yYavasHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
   }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
     _yHareketIvmeAdimPayi = 600;
@@ -185,18 +185,18 @@ void SM::_cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerec
   _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
   _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
   //Hızların belirlenmesi.
-  if(_xGidilecekAdimSayisi < 1200){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 2;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 10;
+  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 4;
+    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
     _xHiz = _xYavasHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz); 
   }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
     _xHareketIvmeAdimPayi = 600;
     _xHareketIvmeAdimBasinaDegisecekHiz = 1;
     _xHiz = _xHizliHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz);
   }
-  if(_yGidilecekAdimSayisi < 1200){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 2;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 10;
+  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 4;
+    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
     _yHiz = _yYavasHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
   }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
     _yHareketIvmeAdimPayi = 600;
@@ -260,12 +260,10 @@ void SM::yHizAyarla(int yavasHiz, int hizliHiz){
 }
 
 void SM::git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi){
-  if(xGidilecekKonumunDerecesi > 309 || xGidilecekKonumunDerecesi < 0){
+  if(xGidilecekKonumunDerecesi > 309 || xGidilecekKonumunDerecesi < 0 || yGidilecekKonumunDerecesi > 124 || yGidilecekKonumunDerecesi < 0){
     return;
   }
-  if(yGidilecekKonumunDerecesi > 124 || yGidilecekKonumunDerecesi < 0){
-    return;
-  }
+  
   if(xGidilecekKonumunDerecesi != _xKonumDerecesi && yGidilecekKonumunDerecesi != _yKonumDerecesi){
     _cifteHareket(xGidilecekKonumunDerecesi, yGidilecekKonumunDerecesi);
   }else if(xGidilecekKonumunDerecesi != _xKonumDerecesi){

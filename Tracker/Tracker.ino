@@ -1,54 +1,58 @@
 #include "SM.h"
 #include "rgb_lcd.h"
 #include <SoftwareSerial.h>
-#define bataryaOlcumPin A2
-#define giris5V A1
-#define giris12V A0
-#define buton 2
-#define buzzer 4
-#define parkButonu A3
-#define SMX350DereceLimitPin 10
-#define SMX0DereceLimitPin 9
-#define SMY90DereceLimitPin 11
-#define SMY0DereceLimitPin 12
-#define SMXDirPin 6
+
+#define parkButtonPin A3
+#define batteryVoltagePin A2
+#define input5VoltagePin A1
+#define input12VoltagePin A0
+#define calibrationButtonPin 2
+#define interruptPinValue 1 // Kartta 3. pin, fakat sistem bunu 1 olarak okuyor.
+#define buzzerPin 4
+#define SMXHighDegreeLimitPin 10
+#define SMXLowerDegreeLimitPin 9
+#define SMYHighDegreeLimitPin 11
+#define SMYLowerDegreeLimitPin 12
+#define SMXDirectionPin 6
 #define SMXStepPin 5
-#define SMYDirPin 8
+#define SMYDirectionPin 8
 #define SMYStepPin 7
-#define kesmePinDegeri 1 // Kartta 3. pin, fakat sistem bunu 1 olarak okuyor.
+
 rgb_lcd lcd;
-SM stepMotorlar(SMXStepPin, SMXDirPin, SMYStepPin, SMYDirPin, SMX350DereceLimitPin, SMX0DereceLimitPin, SMY90DereceLimitPin, SMY0DereceLimitPin);
-String hamVeri = "";
-int gidilecekDereceMotorX = 0;
-int gidilecekDereceMotorY = 0;
-unsigned long xLimitSonCalismaZamani = 0;
-unsigned long yLimitSonCalismaZamani = 0;
-byte batLevel[8];
+SM stepperMotors(SMXStepPin, SMXDirectionPin, SMYStepPin, SMYDirectionPin, SMXHighDegreeLimitPin, SMXLowerDegreeLimitPin, SMYHighDegreeLimitPin, SMYLowerDegreeLimitPin);
+
+String rawData;
+int degreeToGoMotorX = 0;
+int degreeToGoMotorY = 0;
+unsigned long lastWorkingTimeLimitX = 0;
+unsigned long lastWorkingTimeLimitY = 0;
+byte batteryLevel[8];
 float voltage;
 float lastVoltage;
 bool emergencyBuzzerControl;
 
 void setup() {
-  batLevel[0] = B01110;
+  batteryLevel[0] = B01110;
+  batteryLevel[7] = B11111;
   lastVoltage = -1;
   emergencyBuzzerControl = false;
-  pinMode(buton, INPUT);
-  pinMode(buzzer, OUTPUT);
+  pinMode(calibrationButtonPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
   lcd.begin(16, 2);
   lcd.clear();  
-  kalibrasyon();
-  stepMotorlar.xHizAyarla(30,60);
-  stepMotorlar.yHizAyarla(30,60);
-  attachInterrupt(kesmePinDegeri, limitKesmeFonksiyonu, RISING);
+  startSystem();
+  stepperMotors.xHizAyarla(250,90);
+  stepperMotors.yHizAyarla(500,150);
+  attachInterrupt(interruptPinValue, interruptFunction, RISING);
   Serial.begin(9600);
-  yaz("  Y          X  ", 0);
-  yaz(" 0         155", 1);
+  printLCDMiddle("  Y          X  ", 0);
+  printLCDMiddle(" 0         155", 1);
 }
 
 void loop() {
-  voltage = analogRead(bataryaOlcumPin) * 0.0278662;
+  voltage = analogRead(batteryVoltagePin) * 0.0278662;
   if (abs(voltage - lastVoltage) > 0.2) {
-    getBatteryLevel(voltage);
+    printBatteryLevel(voltage);
     lastVoltage = voltage;
     if (voltage <= 20) {
       emergencyBuzzerControl = true;
@@ -58,211 +62,214 @@ void loop() {
   }
 
   if(emergencyBuzzerControl){
-    buzzerCal(250, 1);
+    playBuzzer(250, 1);
   }
 
-  if(digitalRead(parkButonu) == HIGH){
-    stepMotorlar.git(151, 0);
-    yaz(" 0         151", 1);
+  if(digitalRead(parkButtonPin) == HIGH){
+    stepperMotors.git(151, 0);
+    printLCDMiddle(" 0         151", 1);
   }
 
   if(Serial.available()){
-    hamVeri = Serial.readString();
-    if(veriIsle()){
-      yaz((String(gidilecekDereceMotorY) + "          " + String(gidilecekDereceMotorX)), 1);     
-      stepMotorlar.git(gidilecekDereceMotorX, gidilecekDereceMotorY);
+    rawData = Serial.readString();
+    if(proceedReceivedData()){
+      Serial.println("*0#");
+      printLCDMiddle((String(degreeToGoMotorY) + "          " + String(degreeToGoMotorX)), 1);     
+      stepperMotors.git(degreeToGoMotorX, degreeToGoMotorY);
+      Serial.println("*1#");
     }
   }
 }
 
-void limitKesmeFonksiyonu(){
-  if(digitalRead(SMX350DereceLimitPin) == HIGH && millis() - xLimitSonCalismaZamani > 1000 ){
-    stepMotorlar.yonDegistir(true);
-    xLimitSonCalismaZamani = millis();
-  }else if(digitalRead(SMX0DereceLimitPin) == HIGH && millis() - xLimitSonCalismaZamani > 1000 ){
-    stepMotorlar.yonDegistir(true);
-    xLimitSonCalismaZamani = millis();
-  }else if(digitalRead(SMY90DereceLimitPin) == HIGH && millis() - yLimitSonCalismaZamani > 1000 ){
-    stepMotorlar.yonDegistir(false);
-    yLimitSonCalismaZamani = millis();
-  }else if(digitalRead(SMY0DereceLimitPin) == HIGH && millis() - yLimitSonCalismaZamani > 1000 ){
-    stepMotorlar.yonDegistir(false);
-    yLimitSonCalismaZamani = millis();
+void interruptFunction(){
+  if(digitalRead(SMXHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000 ){
+    stepperMotors.yonDegistir(true);
+    lastWorkingTimeLimitX = millis();
+    playBuzzer(250,3);
+  }else if(digitalRead(SMXLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000 ){
+    stepperMotors.yonDegistir(true);
+    lastWorkingTimeLimitX = millis();
+    playBuzzer(250,3);
+  }else if(digitalRead(SMYHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000 ){
+    stepperMotors.yonDegistir(false);
+    lastWorkingTimeLimitY = millis();
+    playBuzzer(250,3);
+  }else if(digitalRead(SMYLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000 ){
+    stepperMotors.yonDegistir(false);
+    lastWorkingTimeLimitY = millis();
+    playBuzzer(250,3);
   }
 }
 
-bool veriIsle(){
-  int startIndex = hamVeri.indexOf('#');
+bool proceedReceivedData(){
+  int startIndex = rawData.indexOf('#');
   if(startIndex == -1){
     return false;
   }
-  int  endIndex = hamVeri.indexOf('*', startIndex);
+  int  endIndex = rawData.indexOf('*', startIndex);
   if(endIndex == -1 || endIndex - startIndex > 8){
     return false;
   }
-  hamVeri = hamVeri.substring(startIndex + 1, endIndex);
-  int dotIndex = hamVeri.indexOf('.');
+  rawData = rawData.substring(startIndex + 1, endIndex);
+  int dotIndex = rawData.indexOf('.');
   if(dotIndex == -1){
     return false;
   }
-  gidilecekDereceMotorX = (hamVeri.substring(0,dotIndex)).toInt();
-  gidilecekDereceMotorY = (hamVeri.substring((dotIndex + 1), (hamVeri.length()))).toInt();
+  degreeToGoMotorX = (rawData.substring(0,dotIndex)).toInt();
+  degreeToGoMotorY = (rawData.substring((dotIndex + 1), (rawData.length()))).toInt();
   return true;
 }
 
-void yaz(String yazi, byte satir){
+void printLCDMiddle(String text, byte row){
   for(int i = 0; i < 16; i++){
-    lcd.setCursor(i, (satir % 2));
+    lcd.setCursor(i, (row % 2));
     lcd.print(" ");
   }
-  lcd.setCursor(((16 - yazi.length()) / 2), (satir % 2));
-  lcd.print(yazi);
+  lcd.setCursor(((16 - text.length()) / 2), (row % 2));
+  lcd.print(text);
 }
 
-bool butonDinle(unsigned int saniye){
+bool listenCalibrationButton(unsigned int second){
   unsigned long baslangic = millis();
-  while(millis() - baslangic <= saniye * 1000){
-        if(digitalRead(buton)){
-          buzzerOlumlu();
+  while(millis() - baslangic <= second * 1000){
+        if(digitalRead(calibrationButtonPin)){
+          playPositiveSound();
           return true;
         }
   }
   return false;
 }
 
-void buzzerCal(unsigned int ms, unsigned int adet){
-  for(unsigned int i = 0; i < adet; i++){
-    digitalWrite(buzzer, HIGH);
+void playBuzzer(unsigned int ms, unsigned int count){
+  for(unsigned int i = 0; i < count; i++){
+    digitalWrite(buzzerPin, HIGH);
     delay(ms);
-    digitalWrite(buzzer, LOW);  
+    digitalWrite(buzzerPin, LOW);  
     delay(ms);
   }
 }
 
-void buzzerOlumlu(){
-  digitalWrite(buzzer, HIGH);
+void playPositiveSound(){
+  digitalWrite(buzzerPin, HIGH);
   delay(500);
-  digitalWrite(buzzer, LOW);
+  digitalWrite(buzzerPin, LOW);
   delay(100);
-  digitalWrite(buzzer, HIGH);
+  digitalWrite(buzzerPin, HIGH);
   delay(100);
-  digitalWrite(buzzer, LOW);
+  digitalWrite(buzzerPin, LOW);
   delay(100);
-  digitalWrite(buzzer, HIGH);
+  digitalWrite(buzzerPin, HIGH);
   delay(100);
-  digitalWrite(buzzer, LOW);
+  digitalWrite(buzzerPin, LOW);
   delay(1000);
 }
 
-void kalibrasyon(){
-  int metinlerArasiBeklemeSuresi = 3000;
-  yaz("BMS SAVUNMA", 0);
-  yaz("TEKNOLOJILERI", 1);
-  delay(metinlerArasiBeklemeSuresi);
-  yaz("ANTEN TRAKER", 0);
-  yaz("VERSIYON 1.0", 1);
-  delay(metinlerArasiBeklemeSuresi);
-  yaz("BMS SAVUNMA TEK.", 0);
-  yaz("V1      V2     ", 1);
-  float voltaj5 = analogRead(giris5V);
-  voltaj5 = voltaj5 * 0.007088068; 
-  float voltaj12 = analogRead(giris12V);
-  voltaj12 = (voltaj12 * 0.015625) + 0.7; // 0.7 diyot kırılma voltajı. 
+void startSystem(){
+  int waitingTime = 3000;
+  printLCDMiddle("BMS SAVUNMA", 0);
+  printLCDMiddle("TEKNOLOJILERI", 1);
+  delay(waitingTime);
+  printLCDMiddle("ANTEN TRACKER", 0);
+  printLCDMiddle("VERSIYON 1.0", 1);
+  delay(waitingTime);
+  printLCDMiddle("BMS SAVUNMA TEK.", 0);
+  printLCDMiddle("V1      V2     ", 1);
+  float voltage5 = analogRead(input5VoltagePin);
+  voltage5 = voltage5 * 0.007088068; 
+  float voltage12 = analogRead(input12VoltagePin);
+  voltage12 = (voltage12 * 0.015625) + 0.7; // 0.7 diyot kırılma voltajı. 
   lcd.setCursor(3, 1);
-  lcd.print(voltaj5, 2);
+  lcd.print(voltage5, 2);
   lcd.setCursor(11, 1);
-  lcd.print(voltaj12, 2);
-  delay(metinlerArasiBeklemeSuresi);
-  yaz("BATARYA V       ", 1);
-  float voltajBatarya = analogRead(bataryaOlcumPin);
-  voltajBatarya = voltajBatarya * 0.0278662;
+  lcd.print(voltage12, 2);
+  delay(waitingTime);
+  printLCDMiddle("BATARYA V       ", 1);
+  float voltageBattery = analogRead(batteryVoltagePin);
+  voltageBattery = voltageBattery * 0.0278662;
   lcd.setCursor(11, 1);
-  lcd.print(voltajBatarya, 2);
-  delay(metinlerArasiBeklemeSuresi);
-  if((voltaj12 > 10.5 && voltaj12 < 14) && (voltaj5 > 4.5 && voltaj5 < 5.3) && voltajBatarya > 20 ){
-      yaz("BMS SAVUNMA TEK.", 0);
-      yaz("VOLTAJLAR UYGUN", 1);
-      delay(metinlerArasiBeklemeSuresi);
-      buzzerOlumlu();
+  lcd.print(voltageBattery, 2);
+  delay(waitingTime);
+  if((voltage12 > 10.5 && voltage12 < 14) && (voltage5 > 4.5 && voltage5 < 5.3) && voltageBattery > 20 ){
+      printLCDMiddle("BMS SAVUNMA TEK.", 0);
+      printLCDMiddle("VOLTAJLAR UYGUN", 1);
+      delay(waitingTime);
+      playPositiveSound();
   }else{
-      yaz("BMS SAVUNMA TEK.", 0);
-      yaz("VOLTAJ ARIZASI", 1);
+      printLCDMiddle("BMS SAVUNMA TEK.", 0);
+      printLCDMiddle("VOLTAJ ARIZASI", 1);
       while(true){
-        buzzerCal(250, 1);
+        playBuzzer(250, 1);
       }      
   }
-  yaz("ANTEN TRACKER", 0);
-  yaz("KALIBRASYON", 1);
-  buzzerCal(500,3);
-  yaz("Y EKSENI", 0);
-  yaz("KALIBRASYON", 1);
-  buzzerCal(500,3);
-  stepMotorlar.SMYKalibrasyon();
-  buzzerOlumlu();
-  bool butonKontrol = false;
-  yaz("X EKSENI", 0);
-  yaz("KALIBRASYON", 1);
-  buzzerCal(500,3);
-  stepMotorlar.SMXKalibrasyon();
-  stepMotorlar.xHizAyarla(30,60);
-  stepMotorlar.git(155,0);
+  printLCDMiddle("ANTEN TRACKER", 0);
+  printLCDMiddle("KALIBRASYON", 1);
+  playBuzzer(500,3);
+  printLCDMiddle("Y EKSENI", 0);
+  printLCDMiddle("KALIBRASYON", 1);
+  playBuzzer(500,3);
+  stepperMotors.SMYKalibrasyon();
+  playPositiveSound();
+  bool buttonCalibrationControl = false;
+  printLCDMiddle("X EKSENI", 0);
+  printLCDMiddle("KALIBRASYON", 1);
+  playBuzzer(500,3);
+  stepperMotors.SMXKalibrasyon();
+  stepperMotors.xHizAyarla(30,60);
+  stepperMotors.git(155,0);
   while(true){
-    yaz("Sehpayi IHA'ya", 1);
-    buzzerCal(500,3);
-    yaz("cevirin.", 1);
-    buzzerCal(500,3);
-    yaz("Pusuladaki", 1);
-    buzzerCal(500,3);
-    yaz("kuzeyle olan aci", 1);
-    buzzerCal(500,3);
-    yaz("farkini PC'ye", 1);
-    buzzerCal(500,3);
-    yaz("girin ve", 1);
-    buzzerCal(500,3);
-    yaz("butona basin.", 1);
-    buzzerCal(500,3);
-    butonKontrol = butonDinle(5);
-    if(butonKontrol){
+    printLCDMiddle("Sehpayi IHA'ya", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("cevirin.", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("Pusuladaki", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("kuzeyle olan aci", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("farkini PC'ye", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("girin ve", 1);
+    playBuzzer(500,3);
+    printLCDMiddle("butona basin.", 1);
+    playBuzzer(500,3);
+    buttonCalibrationControl = listenCalibrationButton(5);
+    if(buttonCalibrationControl){
       break;  
     }
   }
-  delay(metinlerArasiBeklemeSuresi);
-  yaz("KALIBRASYON", 0);
-  yaz("TAMAMLANDI", 1);
-  delay(metinlerArasiBeklemeSuresi);
-  buzzerOlumlu();
+  delay(waitingTime);
+  printLCDMiddle("KALIBRASYON", 0);
+  printLCDMiddle("TAMAMLANDI", 1);
+  delay(waitingTime);
+  playPositiveSound();
   lcd.clear();
 }
 
-void getBatteryLevel(float curvolt) {
-  if (curvolt >= 23.5) {
-    batLevel[1] = B11111;
-    batLevel[2] = B11111;
-    batLevel[3] = B11111;
-    batLevel[4] = B11111;
-    batLevel[5] = B11111;
-    batLevel[6] = B11111;
-    batLevel[7] = B11111;
+void printBatteryLevel(float voltage) {
+  if (voltage >= 23.5) {
+    batteryLevel[1] = B11111;
+    batteryLevel[2] = B11111;
+    batteryLevel[3] = B11111;
+    batteryLevel[4] = B11111;
+    batteryLevel[5] = B11111;
+    batteryLevel[6] = B11111;
   }
-  if (curvolt < 23.5 && curvolt > 20) {
-    batLevel[1] = B10001;
-    batLevel[2] = B10001;
-    batLevel[3] = B10001;
-    batLevel[4] = B11111;
-    batLevel[5] = B11111;
-    batLevel[6] = B11111;
-    batLevel[7] = B11111;
+  if (voltage < 23.5 && voltage > 20) {
+    batteryLevel[1] = B10001;
+    batteryLevel[2] = B10001;
+    batteryLevel[3] = B10001;
+    batteryLevel[4] = B11111;
+    batteryLevel[5] = B11111;
+    batteryLevel[6] = B11111;
   }
-  if (curvolt <= 20) {
-    batLevel[1] = B10001;
-    batLevel[2] = B10001;
-    batLevel[3] = B10001;
-    batLevel[4] = B10001;
-    batLevel[5] = B10001;
-    batLevel[6] = B10001;
-    batLevel[7] = B11111;
+  if (voltage <= 20) {
+    batteryLevel[1] = B10001;
+    batteryLevel[2] = B10001;
+    batteryLevel[3] = B10001;
+    batteryLevel[4] = B10001;
+    batteryLevel[5] = B10001;
+    batteryLevel[6] = B10001;
   }
-  lcd.createChar(0, batLevel);
+  lcd.createChar(0, batteryLevel);
   lcd.setCursor(7, 0);
   lcd.write(byte(0));
 }
