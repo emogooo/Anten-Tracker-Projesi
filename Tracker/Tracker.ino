@@ -7,7 +7,7 @@
 #define input5VoltagePin A1
 #define input12VoltagePin A0
 #define calibrationButtonPin 2
-#define interruptPinValue 1 // Kartta 3. pin, fakat sistem bunu 1 olarak okuyor.
+#define interruptPinValue 1  // Kartta 3. pin, fakat sistem bunu 1 olarak okuyor.
 #define buzzerPin 4
 #define SMXHighDegreeLimitPin 10
 #define SMXLowerDegreeLimitPin 9
@@ -39,10 +39,8 @@ void setup() {
   pinMode(calibrationButtonPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
   lcd.begin(16, 2);
-  lcd.clear();  
+  lcd.clear();
   startSystem();
-  stepperMotors.xHizAyarla(250,90);
-  stepperMotors.yHizAyarla(500,150);
   attachInterrupt(interruptPinValue, interruptFunction, RISING);
   Serial.begin(9600);
   printLCDMiddle("  Y          X  ", 0);
@@ -61,67 +59,63 @@ void loop() {
     }
   }
 
-  if(emergencyBuzzerControl){
+  if (emergencyBuzzerControl) {
     playBuzzer(250, 1);
   }
 
-  if(digitalRead(parkButtonPin) == HIGH){
-    stepperMotors.git(151, 0);
+  if (digitalRead(parkButtonPin) == HIGH) {
+    stepperMotors.move(151, 0);
     printLCDMiddle(" 0         151", 1);
   }
 
-  if(Serial.available()){
+  if (Serial.available()) {
     rawData = Serial.readString();
-    if(proceedReceivedData()){
+    if (proceedReceivedData()) {
       Serial.println("*0#");
-      printLCDMiddle((String(degreeToGoMotorY) + "          " + String(degreeToGoMotorX)), 1);     
-      stepperMotors.git(degreeToGoMotorX, degreeToGoMotorY);
+      printLCDMiddle((String(degreeToGoMotorY) + "          " + String(degreeToGoMotorX)), 1);
+      stepperMotors.move(degreeToGoMotorX, degreeToGoMotorY);
       Serial.println("*1#");
     }
   }
 }
 
-void interruptFunction(){
-  if(digitalRead(SMXHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000 ){
-    stepperMotors.yonDegistir(true);
+void interruptFunction() {
+  if (digitalRead(SMXHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000) {
+    stepperMotors.changeDirection(true);
     lastWorkingTimeLimitX = millis();
-    playBuzzer(250,3);
-  }else if(digitalRead(SMXLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000 ){
-    stepperMotors.yonDegistir(true);
+  } else if (digitalRead(SMXLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000) {
+    stepperMotors.changeDirection(true);
     lastWorkingTimeLimitX = millis();
-    playBuzzer(250,3);
-  }else if(digitalRead(SMYHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000 ){
-    stepperMotors.yonDegistir(false);
+  } else if (digitalRead(SMYHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000) {
+    stepperMotors.changeDirection(false);
     lastWorkingTimeLimitY = millis();
-    playBuzzer(250,3);
-  }else if(digitalRead(SMYLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000 ){
-    stepperMotors.yonDegistir(false);
+  } else if (digitalRead(SMYLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000) {
+    stepperMotors.changeDirection(false);
     lastWorkingTimeLimitY = millis();
-    playBuzzer(250,3);
   }
 }
 
-bool proceedReceivedData(){
+bool proceedReceivedData() {
   int startIndex = rawData.indexOf('#');
-  if(startIndex == -1){
+  if (startIndex == -1) {
     return false;
   }
-  int  endIndex = rawData.indexOf('*', startIndex);
-  if(endIndex == -1 || endIndex - startIndex > 8){
+  int endIndex = rawData.indexOf('*', startIndex);
+  if (endIndex == -1 || endIndex - startIndex > 8) {
     return false;
   }
   rawData = rawData.substring(startIndex + 1, endIndex);
   int dotIndex = rawData.indexOf('.');
-  if(dotIndex == -1){
+  if (dotIndex == -1) {
     return false;
   }
-  degreeToGoMotorX = (rawData.substring(0,dotIndex)).toInt();
+  degreeToGoMotorX = (rawData.substring(0, dotIndex)).toInt();
   degreeToGoMotorY = (rawData.substring((dotIndex + 1), (rawData.length()))).toInt();
   return true;
 }
 
-void printLCDMiddle(String text, byte row){
-  for(int i = 0; i < 16; i++){
+void printLCDMiddle(String text, byte row) {
+  for (int i = 0; i < 16; i++) {
     lcd.setCursor(i, (row % 2));
     lcd.print(" ");
   }
@@ -129,27 +123,27 @@ void printLCDMiddle(String text, byte row){
   lcd.print(text);
 }
 
-bool listenCalibrationButton(unsigned int second){
-  unsigned long baslangic = millis();
-  while(millis() - baslangic <= second * 1000){
-        if(digitalRead(calibrationButtonPin)){
-          playPositiveSound();
-          return true;
-        }
+bool listenCalibrationButton(unsigned int second) {
+  unsigned long startTime = millis();
+  while (millis() - startTime <= second * 1000) {
+    if (digitalRead(calibrationButtonPin)) {
+      playPositiveSound();
+      return true;
+    }
   }
   return false;
 }
 
-void playBuzzer(unsigned int ms, unsigned int count){
-  for(unsigned int i = 0; i < count; i++){
+void playBuzzer(unsigned int ms, unsigned int count) {
+  for (unsigned int i = 0; i < count; i++) {
     digitalWrite(buzzerPin, HIGH);
     delay(ms);
-    digitalWrite(buzzerPin, LOW);  
+    digitalWrite(buzzerPin, LOW);
     delay(ms);
   }
 }
 
-void playPositiveSound(){
+void playPositiveSound() {
   digitalWrite(buzzerPin, HIGH);
   delay(500);
   digitalWrite(buzzerPin, LOW);
@@ -164,7 +158,7 @@ void playPositiveSound(){
   delay(1000);
 }
 
-void startSystem(){
+void startSystem() {
   int waitingTime = 3000;
   printLCDMiddle("BMS SAVUNMA", 0);
   printLCDMiddle("TEKNOLOJILERI", 1);
@@ -175,9 +169,9 @@ void startSystem(){
   printLCDMiddle("BMS SAVUNMA TEK.", 0);
   printLCDMiddle("V1      V2     ", 1);
   float voltage5 = analogRead(input5VoltagePin);
-  voltage5 = voltage5 * 0.007088068; 
+  voltage5 = voltage5 * 0.007088068;
   float voltage12 = analogRead(input12VoltagePin);
-  voltage12 = (voltage12 * 0.015625) + 0.7; // 0.7 diyot kırılma voltajı. 
+  voltage12 = (voltage12 * 0.015625) + 0.7;  // 0.7 diyot kırılma voltajı.
   lcd.setCursor(3, 1);
   lcd.print(voltage5, 2);
   lcd.setCursor(11, 1);
@@ -189,51 +183,52 @@ void startSystem(){
   lcd.setCursor(11, 1);
   lcd.print(voltageBattery, 2);
   delay(waitingTime);
-  if((voltage12 > 10.5 && voltage12 < 14) && (voltage5 > 4.5 && voltage5 < 5.3) && voltageBattery > 20 ){
-      printLCDMiddle("BMS SAVUNMA TEK.", 0);
-      printLCDMiddle("VOLTAJLAR UYGUN", 1);
-      delay(waitingTime);
-      playPositiveSound();
-  }else{
-      printLCDMiddle("BMS SAVUNMA TEK.", 0);
-      printLCDMiddle("VOLTAJ ARIZASI", 1);
-      while(true){
-        playBuzzer(250, 1);
-      }      
+  if ((voltage12 > 10.5 && voltage12 < 14) && (voltage5 > 4.5 && voltage5 < 5.3) && voltageBattery > 20) {
+    printLCDMiddle("BMS SAVUNMA TEK.", 0);
+    printLCDMiddle("VOLTAJLAR UYGUN", 1);
+    delay(waitingTime);
+    playPositiveSound();
+  } else {
+    printLCDMiddle("BMS SAVUNMA TEK.", 0);
+    printLCDMiddle("VOLTAJ ARIZASI", 1);
+    while (true) {
+      playBuzzer(250, 1);
+    }
   }
   printLCDMiddle("ANTEN TRACKER", 0);
   printLCDMiddle("KALIBRASYON", 1);
-  playBuzzer(500,3);
+  playBuzzer(500, 3);
   printLCDMiddle("Y EKSENI", 0);
   printLCDMiddle("KALIBRASYON", 1);
-  playBuzzer(500,3);
-  stepperMotors.SMYKalibrasyon();
+  playBuzzer(500, 3);
+  stepperMotors.SMYCalibration();
   playPositiveSound();
   bool buttonCalibrationControl = false;
   printLCDMiddle("X EKSENI", 0);
   printLCDMiddle("KALIBRASYON", 1);
-  playBuzzer(500,3);
-  stepperMotors.SMXKalibrasyon();
-  stepperMotors.xHizAyarla(30,60);
-  stepperMotors.git(155,0);
-  while(true){
+  playBuzzer(500, 3);
+  stepperMotors.SMXCalibration();
+  stepperMotors.xSetSpeed(250, 90);
+  stepperMotors.ySetSpeed(500, 150);
+  stepperMotors.move(155, 0);
+  while (true) {
     printLCDMiddle("Sehpayi IHA'ya", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("cevirin.", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("Pusuladaki", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("kuzeyle olan aci", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("farkini PC'ye", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("girin ve", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     printLCDMiddle("butona basin.", 1);
-    playBuzzer(500,3);
+    playBuzzer(500, 3);
     buttonCalibrationControl = listenCalibrationButton(5);
-    if(buttonCalibrationControl){
-      break;  
+    if (buttonCalibrationControl) {
+      break;
     }
   }
   delay(waitingTime);

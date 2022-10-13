@@ -2,6 +2,7 @@ from tabnanny import check
 from tkinter import *
 from tkinter import messagebox
 import time
+import sys
 
 class App():
     def __init__(self) -> None:
@@ -13,7 +14,6 @@ class App():
         global yTB
         global transmitButton
         global connectButton
-        global isTrackerEnable
         
         root = Tk()
         root.title("Anten Tracker - Transmitter")
@@ -30,8 +30,6 @@ class App():
         portStatusLabel.grid(row = 0, column = 1, padx=15, pady = 5)
         connectButton.grid(row=1, column=1, padx=75)
 
-        isTrackerEnable = True
-    
     def transmit(self, x, y):
         try:
             if int(x) < 0 or int(x) > 309:
@@ -42,21 +40,19 @@ class App():
                 messagebox.showerror("Hata", "Y değeri 0-124 değerleri arasında olmalıdır.")
                 return
 
+            global isTrackerEnable
             if not isTrackerEnable:
                 return
 
             transmitButton.configure(state=DISABLED)
-            arduino.write("#" + x + "." + y + "*".encode())
+            arduino.write(("#" + str(x) + "." + str(y) + "*").encode())
             startTime = time.time()
             while time.time() - startTime < 2:
                 bytesToRead = arduino.inWaiting()
-                if bytesToRead < 1:
+                if bytesToRead < 5:
                     continue
                 dataFromArduino = arduino.read(bytesToRead)
                 dataFromArduino = dataFromArduino.decode()
-
-                #dataFromArduino = arduino.readline()
-                #dataFromArduino = dataFromArduino.decode()
                 
                 if "*0#" in dataFromArduino:
                     isTrackerEnable = False
@@ -64,6 +60,7 @@ class App():
                     disableTime = time.time()
                     portStatusLabel.config(text= "Motorlar çalışıyor.")
                     break
+
             if isTrackerEnable:
                 portStatusLabel.config(text= "Veri iletilemedi.")
             else:
@@ -75,7 +72,7 @@ class App():
             messagebox.showerror("Hata", "Girdiler sadece rakamlardan oluşmalıdır.")
             
         except:
-            messagebox.showerror("Hata", "Yanlış port veya gönderim hatası.")
+            messagebox.showerror("Hata", "Yanlış port veya gönderim hatası. " + str(sys.exc_info()[0]))
 
     def connect(self):
         import serial.tools.list_ports
@@ -96,16 +93,15 @@ class App():
         portStatusLabel.config(text= "Aygıt bulunamadı.")
 
     def listenTracker(self):
+        global isTrackerEnable
+        global disableTime
         if not isTrackerEnable:
             bytesToRead = arduino.inWaiting()
-            if bytesToRead > 0 or time.time() - disableTime > 15:
+            if bytesToRead > 4 or time.time() - disableTime > 30:
                 dataFromArduino = arduino.read(bytesToRead)
                 dataFromArduino = dataFromArduino.decode()
-            
-                #dataFromArduino = arduino.readline()
-                #dataFromArduino = dataFromArduino.decode()
 
-                if "*1#" in dataFromArduino or time.time() - disableTime > 15:
+                if "*1#" in dataFromArduino or time.time() - disableTime > 30:
                     isTrackerEnable = True
                     portStatusLabel.config(text= "Motorlar hazır.")
                 else:
@@ -114,6 +110,8 @@ class App():
                 root.after(100, self.listenTracker)
         
     def run(self):
+        global isTrackerEnable
+        isTrackerEnable = True
         root.mainloop()
         
 app = App()

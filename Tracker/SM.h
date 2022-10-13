@@ -1,55 +1,55 @@
 #include "Arduino.h"
 
-class SM{
-  private:
+class SM {
+private:
   byte _SMXStepPin;
-  byte _SMXDirPin;
+  byte _SMXDirectionPin;
   byte _SMYStepPin;
-  byte _SMYDirPin;
-  byte _SMX350DereceLimitPin;
-  byte _SMX0DereceLimitPin;
-  byte _SMY90DereceLimitPin;
-  byte _SMY0DereceLimitPin;
-  byte _SMXDir;
-  byte _SMYDir;
-  int _xHiz;
-  int _yHiz;
-  int _xYavasHiz;
-  int _xHizliHiz;
-  int _yYavasHiz;
-  int _yHizliHiz;
-  unsigned long _xEkseniAdimSayisi;
-  unsigned long _yEkseniAdimSayisi;
-  int _xKonumDerecesi;
-  int _yKonumDerecesi;
-  int _xGidilecekDereceSayisi;
-  int _yGidilecekDereceSayisi;
-  unsigned long _xGidilecekAdimSayisi;
-  unsigned long _yGidilecekAdimSayisi;
-  unsigned long _xGidilenAdimSayisi;
-  unsigned long _yGidilenAdimSayisi;
-  int _xHareketIvmeAdimPayi;
-  int _yHareketIvmeAdimPayi;
-  int _xHareketIvmeAdimBasinaDegisecekHiz;
-  int _yHareketIvmeAdimBasinaDegisecekHiz;
-  unsigned long _xEkseni1DereceIcinAdimSayisi;
-  unsigned long _yEkseni1DereceIcinAdimSayisi;
-  void _xBirAdimAt();
-  void _yBirAdimAt();
-  void _xCifteHareketBirAdimAt();
-  void _yCifteHareketBirAdimAt();
-  void _xYonAyarla(byte yon);
-  void _yYonAyarla(byte yon);
-  void _xTekilHareket(int gidilecekKonumunDerecesi);
-  void _yTekilHareket(int gidilecekKonumunDerecesi);
-  void _cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi);
-  
-  public:
-  SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SMX350DereceLimitPin, byte SMX0DereceLimitPin, byte SMY90DereceLimitPin, byte SMY0DereceLimitPin);
-  unsigned long SMXKalibrasyon();
-  unsigned long SMYKalibrasyon();
-  void yonDegistir(bool kontrol);
-  void xHizAyarla(int yavasHiz, int hizliHiz);
-  void yHizAyarla(int yavasHiz, int hizliHiz);
-  void git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi); 
+  byte _SMYDirectionPin;
+  byte _SMXHighDegreeLimitPin;
+  byte _SMXLowerDegreeLimitPin;
+  byte _SMYHighDegreeLimitPin;
+  byte _SMYLowerDegreeLimitPin;
+  byte _SMXDirection;
+  byte _SMYDirection;
+  int _xSpeed;
+  int _ySpeed;
+  int _xLowSpeed;
+  int _xHighSpeed;
+  int _yLowSpeed;
+  int _yHighSpeed;
+  unsigned long _xAxisStepCount;
+  unsigned long _yAxisStepCount;
+  unsigned long _xAxisStepCountForOneDegree;
+  unsigned long _yAxisStepCountForOneDegree;
+  int _xPositionDegree;
+  int _yPositionDegree;
+  int _xDegreeToGo;
+  int _yDegreeToGo;
+  unsigned long _xStepToGo;
+  unsigned long _yStepToGo;
+  unsigned long _xNumberOfStepsTaken;
+  unsigned long _yNumberOfStepsTaken;
+  int _xAccelerationStepShare;
+  int _yAccelerationStepShare;
+  int _xSpeedToChangePerStep;
+  int _ySpeedToChangePerStep;
+  void _xTakeAStep();
+  void _yTakeAStep();
+  void _xDoubleMoveTakeAStep();
+  void _yDoubleMoveTakeAStep();
+  void _xSetDirection(byte direction);
+  void _ySetDirection(byte direction);
+  void _xSingularMove(int degreeOfDestination);
+  void _ySingularMove(int degreeOfDestination);
+  void _doubleMove(int xDegreeOfDestination, int yDegreeOfDestination);
+
+public:
+  SM(byte SMXStepPin, byte SMXDirectionPin, byte SMYStepPin, byte SMYDirectionPin, byte SMXHighDegreeLimitPin, byte SMXLowerDegreeLimitPin, byte SMYHighDegreeLimitPin, byte SMYLowerDegreeLimitPin);
+  void SMXCalibration();
+  void SMYCalibration();
+  void changeDirection(bool control);
+  void xSetSpeed(int lowSpeed, int highSpeed);
+  void ySetSpeed(int lowSpeed, int highSpeed);
+  void move(int xDegreeOfDestination, int yDegreeOfDestination);
 };

@@ -1,274 +1,273 @@
 #include "SM.h"
 
-SM::SM(byte SMXStepPin, byte SMXDirPin, byte SMYStepPin, byte SMYDirPin, byte SMX350DereceLimitPin, byte SMX0DereceLimitPin, byte SMY90DereceLimitPin, byte SMY0DereceLimitPin){
+SM::SM(byte SMXStepPin, byte SMXDirectionPin, byte SMYStepPin, byte SMYDirectionPin, byte SMXHighDegreeLimitPin, byte SMXLowerDegreeLimitPin, byte SMYHighDegreeLimitPin, byte SMYLowerDegreeLimitPin) {
   _SMXStepPin = SMXStepPin;
-  _SMXDirPin = SMXDirPin;
+  _SMXDirectionPin = SMXDirectionPin;
   _SMYStepPin = SMYStepPin;
-  _SMYDirPin = SMYDirPin;
-  _SMX350DereceLimitPin = SMX350DereceLimitPin;
-  _SMX0DereceLimitPin = SMX0DereceLimitPin;
-  _SMY90DereceLimitPin = SMY90DereceLimitPin;
-  _SMY0DereceLimitPin = SMY0DereceLimitPin;
-  xHizAyarla(50,100);
-  yHizAyarla(50,100);
+  _SMYDirectionPin = SMYDirectionPin;
+  _SMXHighDegreeLimitPin = SMXHighDegreeLimitPin;
+  _SMXLowerDegreeLimitPin = SMXLowerDegreeLimitPin;
+  _SMYHighDegreeLimitPin = SMYHighDegreeLimitPin;
+  _SMYLowerDegreeLimitPin = SMYLowerDegreeLimitPin;
+  xSetSpeed(500, 250);
+  ySetSpeed(500, 250);
 }
 
-void SM::_xBirAdimAt(){
+void SM::_xTakeAStep() {
   digitalWrite(_SMXStepPin, HIGH);
-  delayMicroseconds(_xHiz);
+  delayMicroseconds(_xSpeed);
   digitalWrite(_SMXStepPin, LOW);
-  delayMicroseconds(_xHiz);
+  delayMicroseconds(_xSpeed);
 }
 
-void SM::_yBirAdimAt(){
+void SM::_yTakeAStep() {
   digitalWrite(_SMYStepPin, HIGH);
-  delayMicroseconds(_yHiz);
+  delayMicroseconds(_ySpeed);
   digitalWrite(_SMYStepPin, LOW);
-  delayMicroseconds(_yHiz);
+  delayMicroseconds(_ySpeed);
 }
 
-void SM::_xCifteHareketBirAdimAt(){
+void SM::_xDoubleMoveTakeAStep() {
   digitalWrite(_SMXStepPin, HIGH);
-  delayMicroseconds(_xHiz);
+  delayMicroseconds(_xSpeed);
   digitalWrite(_SMXStepPin, LOW);
 }
 
-void SM::_yCifteHareketBirAdimAt(){
+void SM::_yDoubleMoveTakeAStep() {
   digitalWrite(_SMYStepPin, HIGH);
-  delayMicroseconds(_yHiz);
+  delayMicroseconds(_ySpeed);
   digitalWrite(_SMYStepPin, LOW);
 }
 
-unsigned long SM::SMXKalibrasyon(){
-  _xYonAyarla(HIGH);
-  _xHiz = 30; // Önceki motor değer 400
-  _xEkseniAdimSayisi = 0;
-  while(digitalRead(_SMX350DereceLimitPin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!!
-    _xBirAdimAt();
+void SM::SMXCalibration() {
+  _xSetDirection(HIGH);
+  _xSpeed = 30;
+  _xAxisStepCount = 0;
+  while (digitalRead(_SMXHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir
+    _xTakeAStep();
   }
-  _xYonAyarla(!_SMXDir);
-  while(digitalRead(_SMX0DereceLimitPin) == LOW){
-    _xBirAdimAt();
-    _xEkseniAdimSayisi++;
+  _xSetDirection(!_SMXDirection);
+  while (digitalRead(_SMXLowerDegreeLimitPin) == LOW) {
+    _xTakeAStep();
+    _xAxisStepCount++;
   }
-  _xYonAyarla(!_SMXDir);
-  for(int i = 0; i < 500; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
-    _xBirAdimAt();
+  _xSetDirection(!_SMXDirection);
+  for (int i = 0; i < 500; i++) {  // Limit Butona baskı yapmaması için 500 adım geri döner. Burada ki 500 adım kör noktadır.
+    _xTakeAStep();
   }
-  _xEkseni1DereceIcinAdimSayisi = (_xEkseniAdimSayisi - 1000) / 310;
-  _xKonumDerecesi = 0;
-  return _xEkseniAdimSayisi;
-}
-unsigned long SM::SMYKalibrasyon(){
-  _yYonAyarla(HIGH);
-  _yHiz = 30; // Önceki motor değeri 200
-  _yEkseniAdimSayisi = 0;
-  while(digitalRead(_SMY90DereceLimitPin) == LOW){          // Yönden kaynaklı problem olabilir burası çok önemli !!! Yukarı hareket ediyor
-    _yBirAdimAt();
-  }
-  _yYonAyarla(!_SMYDir);
-  while(digitalRead(_SMY0DereceLimitPin) == LOW){         // Aşağı hareket ediyor 
-    _yBirAdimAt();
-    _yEkseniAdimSayisi++;
-  }
-  _yYonAyarla(!_SMYDir);
-  for(int i = 0; i < 1000; i++){                     // Limit Butona baskı yapmaması için 5 adım geri döner. Burada ki 5 adım kör noktadır. Adım sayısı gerektiğinde yalnızca içeriden değiştirilebilir.
-    _yBirAdimAt();
-  }
-  _yEkseni1DereceIcinAdimSayisi = (_yEkseniAdimSayisi - 2000) / 125;
-  _yKonumDerecesi = 0;
-  return _yEkseniAdimSayisi;
+  _xAxisStepCountForOneDegree = (_xAxisStepCount - 1000) / 310;
+  _xPositionDegree = 0;
 }
 
-void SM::_xYonAyarla(byte yon){
-  _SMXDir = yon;
-  digitalWrite(_SMXDirPin, _SMXDir);
+void SM::SMYCalibration() {
+  _ySetDirection(HIGH);
+  _ySpeed = 30;
+  _yAxisStepCount = 0;
+  while (digitalRead(_SMYHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir. Yukarı hareket ediyor.
+    _yTakeAStep();
+  }
+  _ySetDirection(!_SMYDirection);
+  while (digitalRead(_SMYLowerDegreeLimitPin) == LOW) {  // Aşağı hareket ediyor.
+    _yTakeAStep();
+    _yAxisStepCount++;
+  }
+  _ySetDirection(!_SMYDirection);
+  for (int i = 0; i < 1000; i++) {  // Limit Butona baskı yapmaması için 1000 adım geri döner. Burada ki 1000 adım kör noktadır.
+    _yTakeAStep();
+  }
+  _yAxisStepCountForOneDegree = (_yAxisStepCount - 2000) / 125;
+  _yPositionDegree = 0;
 }
 
-void SM::_yYonAyarla(byte yon){
-  _SMYDir = yon;
-  digitalWrite(_SMYDirPin, _SMYDir);
+void SM::_xSetDirection(byte direction) {
+  _SMXDirection = direction;
+  digitalWrite(_SMXDirectionPin, _SMXDirection);
 }
 
-void SM::_xTekilHareket(int gidilecekKonumunDerecesi){
+void SM::_ySetDirection(byte direction) {
+  _SMYDirection = direction;
+  digitalWrite(_SMYDirectionPin, _SMYDirection);
+}
+
+void SM::_xSingularMove(int degreeOfDestination) {
   // Yönün belirlenmesi.
-  if(_xKonumDerecesi < gidilecekKonumunDerecesi){ // 0dan 100e
-    _xYonAyarla(HIGH);
-  }else{                                       // 100den 0a
-    _xYonAyarla(LOW);
+  if (_xPositionDegree < degreeOfDestination) {  // 0dan 100e
+    _xSetDirection(HIGH);
+  } else {  // 100den 0a
+    _xSetDirection(LOW);
   }
   // Kaç derecelik hareket yapacağının belirlenmesi.
-  _xGidilecekDereceSayisi = abs(_xKonumDerecesi - gidilecekKonumunDerecesi);
+  _xDegreeToGo = abs(_xPositionDegree - degreeOfDestination);
   // Atılacak adımın belirlenmesi.
-  _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
+  _xStepToGo = _xDegreeToGo * _xAxisStepCountForOneDegree;
   // Hızların belirlenmesi.
-  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 4;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _xHiz = _xYavasHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz); 
-  }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
-    _xHareketIvmeAdimPayi = 600;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _xHiz = _xHizliHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz);
+  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket minimum 1 derecelik adım sayısına(880 adım) göre ivmelenir.
+    _xAccelerationStepShare = _xAxisStepCountForOneDegree / 4;
+    _xSpeedToChangePerStep = 1;
+    _xSpeed = _xLowSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
+  } else {  // Uzun mesafe hareket minimum 5 derece (4400 adım). 600-600 ivme adım payı.
+    _xAccelerationStepShare = 600;
+    _xSpeedToChangePerStep = 1;
+    _xSpeed = _xHighSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
   }
-  _xGidilecekAdimSayisi = _xGidilecekAdimSayisi - (_xHareketIvmeAdimPayi * 2);
+  _xStepToGo = _xStepToGo - (_xAccelerationStepShare * 2);
   // Hareket fonksiyonu.
-  for(int i = 0; i < _xHareketIvmeAdimPayi; i++){
-    _xBirAdimAt();
-    _xHiz = _xHiz - _xHareketIvmeAdimBasinaDegisecekHiz;
+  for (int i = 0; i < _xAccelerationStepShare; i++) {
+    _xTakeAStep();
+    _xSpeed = _xSpeed - _xSpeedToChangePerStep;
   }
-  for(unsigned long i = 0; i < _xGidilecekAdimSayisi; i++){
-    _xBirAdimAt();
+  for (unsigned long i = 0; i < _xStepToGo; i++) {
+    _xTakeAStep();
   }
-  for(int i = 0; i < _xHareketIvmeAdimPayi; i++){
-    _xBirAdimAt();
-    _xHiz = _xHiz + _xHareketIvmeAdimBasinaDegisecekHiz;
-  }  
+  for (int i = 0; i < _xAccelerationStepShare; i++) {
+    _xTakeAStep();
+    _xSpeed = _xSpeed + _xSpeedToChangePerStep;
+  }
   // Konum güncelleme.
-  _xKonumDerecesi = gidilecekKonumunDerecesi;
+  _xPositionDegree = degreeOfDestination;
 }
 
-void SM::_yTekilHareket(int gidilecekKonumunDerecesi){
+void SM::_ySingularMove(int degreeOfDestination) {
   // Yönün belirlenmesi.
-  if(_yKonumDerecesi < gidilecekKonumunDerecesi){ // 0dan 100e
-    _yYonAyarla(HIGH);
-  }else{                                       // 100den 0a
-    _yYonAyarla(LOW);
+  if (_yPositionDegree < degreeOfDestination) {  // 0dan 100e
+    _ySetDirection(HIGH);
+  } else {  // 100den 0a
+    _ySetDirection(LOW);
   }
   // Kaç derecelik hareket yapacağının belirlenmesi.
-  _yGidilecekDereceSayisi = abs(_yKonumDerecesi - gidilecekKonumunDerecesi);
+  _yDegreeToGo = abs(_yPositionDegree - degreeOfDestination);
   // Atılacak adımın belirlenmesi.
-  _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
+  _yStepToGo = _yDegreeToGo * _yAxisStepCountForOneDegree;
   // Hızların belirlenmesi.
-  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 4;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _yHiz = _yYavasHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
-  }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
-    _yHareketIvmeAdimPayi = 600;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _yHiz = _yHizliHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
+  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _yAccelerationStepShare = _yAxisStepCountForOneDegree / 4;
+    _ySpeedToChangePerStep = 1;
+    _ySpeed = _yLowSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
+  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+    _yAccelerationStepShare = 600;
+    _ySpeedToChangePerStep = 1;
+    _ySpeed = _yHighSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
   }
-  _yGidilecekAdimSayisi = _yGidilecekAdimSayisi - (_yHareketIvmeAdimPayi * 2);
+  _yStepToGo = _yStepToGo - (_yAccelerationStepShare * 2);
   // Hareket fonksiyonu.
-  for(int i = 0; i < _yHareketIvmeAdimPayi; i++){
-    _yBirAdimAt();
-    _yHiz = _yHiz - _yHareketIvmeAdimBasinaDegisecekHiz;
+  for (int i = 0; i < _yAccelerationStepShare; i++) {
+    _yTakeAStep();
+    _ySpeed = _ySpeed - _ySpeedToChangePerStep;
   }
-  for(unsigned long i = 0; i < _yGidilecekAdimSayisi; i++){
-    _yBirAdimAt();
+  for (unsigned long i = 0; i < _yStepToGo; i++) {
+    _yTakeAStep();
   }
-  for(int i = 0; i < _yHareketIvmeAdimPayi; i++){
-    _yBirAdimAt();
-    _yHiz = _yHiz + _yHareketIvmeAdimBasinaDegisecekHiz;
+  for (int i = 0; i < _yAccelerationStepShare; i++) {
+    _yTakeAStep();
+    _ySpeed = _ySpeed + _ySpeedToChangePerStep;
   }
   // Konum güncelleme.
-  _yKonumDerecesi = gidilecekKonumunDerecesi;
+  _yPositionDegree = degreeOfDestination;
 }
 
-void SM::_cifteHareket(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi){
+void SM::_doubleMove(int xDegreeOfDestination, int yDegreeOfDestination) {
   // Yönlerin belirlenmesi.
-  if(_xKonumDerecesi < xGidilecekKonumunDerecesi){ // 0dan 100e
-    _xYonAyarla(HIGH);
-  }else{                                       // 100den 0a
-    _xYonAyarla(LOW);
+  if (_xPositionDegree < xDegreeOfDestination) {  // 0dan 100e
+    _xSetDirection(HIGH);
+  } else {  // 100den 0a
+    _xSetDirection(LOW);
   }
-  if(_yKonumDerecesi < yGidilecekKonumunDerecesi){ // 0dan 100e  
-    _yYonAyarla(HIGH);
-  }else{                                       // 100den 0a
-    _yYonAyarla(LOW);
+  if (_yPositionDegree < yDegreeOfDestination) {  // 0dan 100e
+    _ySetDirection(HIGH);
+  } else {  // 100den 0a
+    _ySetDirection(LOW);
   }
   // Kaç derecelik hareket yapılacağının belirlenmesi.
-  _xGidilecekDereceSayisi = abs(_xKonumDerecesi - xGidilecekKonumunDerecesi);
-  _yGidilecekDereceSayisi = abs(_yKonumDerecesi - yGidilecekKonumunDerecesi);
+  _xDegreeToGo = abs(_xPositionDegree - xDegreeOfDestination);
+  _yDegreeToGo = abs(_yPositionDegree - yDegreeOfDestination);
   // Atılacak adımların belirlenmesi.
-  _xGidilecekAdimSayisi = _xGidilecekDereceSayisi * _xEkseni1DereceIcinAdimSayisi;
-  _yGidilecekAdimSayisi = _yGidilecekDereceSayisi * _yEkseni1DereceIcinAdimSayisi;
+  _xStepToGo = _xDegreeToGo * _xAxisStepCountForOneDegree;
+  _yStepToGo = _yDegreeToGo * _yAxisStepCountForOneDegree;
   //Hızların belirlenmesi.
-  if(_xGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _xHareketIvmeAdimPayi = _xEkseni1DereceIcinAdimSayisi / 4;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _xHiz = _xYavasHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz); 
-  }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
-    _xHareketIvmeAdimPayi = 600;
-    _xHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _xHiz = _xHizliHiz + (_xHareketIvmeAdimPayi * _xHareketIvmeAdimBasinaDegisecekHiz);
+  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _xAccelerationStepShare = _xAxisStepCountForOneDegree / 4;
+    _xSpeedToChangePerStep = 1;
+    _xSpeed = _xLowSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
+  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+    _xAccelerationStepShare = 600;
+    _xSpeedToChangePerStep = 1;
+    _xSpeed = _xHighSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
   }
-  if(_yGidilecekDereceSayisi < 5){  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
-    _yHareketIvmeAdimPayi = _yEkseni1DereceIcinAdimSayisi / 4;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _yHiz = _yYavasHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
-  }else{  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
-    _yHareketIvmeAdimPayi = 600;
-    _yHareketIvmeAdimBasinaDegisecekHiz = 1;
-    _yHiz = _yHizliHiz + (_yHareketIvmeAdimPayi * _yHareketIvmeAdimBasinaDegisecekHiz); 
+  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+    _yAccelerationStepShare = _yAxisStepCountForOneDegree / 4;
+    _ySpeedToChangePerStep = 1;
+    _ySpeed = _yLowSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
+  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+    _yAccelerationStepShare = 600;
+    _ySpeedToChangePerStep = 1;
+    _ySpeed = _yHighSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
   }
   // Hareket fonksiyonu.
-  _xGidilenAdimSayisi = 0;
-  _yGidilenAdimSayisi = 0;
-  while((_xGidilecekAdimSayisi - _xGidilenAdimSayisi) > 0 || (_yGidilecekAdimSayisi - _yGidilenAdimSayisi) > 0){
-    if((_xGidilecekAdimSayisi - _xGidilenAdimSayisi) > 0){
-      if(_xGidilenAdimSayisi < _xHareketIvmeAdimPayi){
-        _xHiz = _xHiz - _xHareketIvmeAdimBasinaDegisecekHiz;
-      }else if(_xGidilecekAdimSayisi - _xGidilenAdimSayisi < _xHareketIvmeAdimPayi){
-        _xHiz = _xHiz + _xHareketIvmeAdimBasinaDegisecekHiz;
+  _xNumberOfStepsTaken = 0;
+  _yNumberOfStepsTaken = 0;
+  while ((_xStepToGo - _xNumberOfStepsTaken) > 0 || (_yStepToGo - _yNumberOfStepsTaken) > 0) {
+    if ((_xStepToGo - _xNumberOfStepsTaken) > 0) {
+      if (_xNumberOfStepsTaken < _xAccelerationStepShare) {
+        _xSpeed = _xSpeed - _xSpeedToChangePerStep;
+      } else if (_xStepToGo - _xNumberOfStepsTaken < _xAccelerationStepShare) {
+        _xSpeed = _xSpeed + _xSpeedToChangePerStep;
       }
-      _xCifteHareketBirAdimAt();
-      _xGidilenAdimSayisi++;
-    }else{
-      if(_xHiz > _yHiz){
-        _xHiz = _xHiz - _xHareketIvmeAdimBasinaDegisecekHiz;
+      _xDoubleMoveTakeAStep();
+      _xNumberOfStepsTaken++;
+    } else {
+      if (_xSpeed > _ySpeed) {
+        _xSpeed = _xSpeed - _xSpeedToChangePerStep;
       }
-      delayMicroseconds(_xHiz);
+      delayMicroseconds(_xSpeed);
     }
-    if((_yGidilecekAdimSayisi - _yGidilenAdimSayisi) > 0){
-      if(_yGidilenAdimSayisi < _yHareketIvmeAdimPayi){
-        _yHiz = _yHiz - _yHareketIvmeAdimBasinaDegisecekHiz;
-      }else if((_yGidilecekAdimSayisi - _yGidilenAdimSayisi) < _yHareketIvmeAdimPayi){
-        _yHiz = _yHiz + _yHareketIvmeAdimBasinaDegisecekHiz;
+    if ((_yStepToGo - _yNumberOfStepsTaken) > 0) {
+      if (_yNumberOfStepsTaken < _yAccelerationStepShare) {
+        _ySpeed = _ySpeed - _ySpeedToChangePerStep;
+      } else if ((_yStepToGo - _yNumberOfStepsTaken) < _yAccelerationStepShare) {
+        _ySpeed = _ySpeed + _ySpeedToChangePerStep;
       }
-      _yCifteHareketBirAdimAt();
-      _yGidilenAdimSayisi++;
-    }else{
-      if(_yHiz > _xHiz){
-        _yHiz = _yHiz - _yHareketIvmeAdimBasinaDegisecekHiz;
+      _yDoubleMoveTakeAStep();
+      _yNumberOfStepsTaken++;
+    } else {
+      if (_ySpeed > _xSpeed) {
+        _ySpeed = _ySpeed - _ySpeedToChangePerStep;
       }
-      delayMicroseconds(_yHiz);
+      delayMicroseconds(_ySpeed);
     }
   }
   // Konum güncelleme.
-  _xKonumDerecesi = xGidilecekKonumunDerecesi;
-  _yKonumDerecesi = yGidilecekKonumunDerecesi;
+  _xPositionDegree = xDegreeOfDestination;
+  _yPositionDegree = yDegreeOfDestination;
 }
 
-void SM::yonDegistir(bool kontrol){
-  if(kontrol){
-    _xYonAyarla(!_SMXDir);
-  }else{
-    _yYonAyarla(!_SMYDir);
-  } 
+void SM::changeDirection(bool control) {
+  if (control) {
+    _xSetDirection(!_SMXDirection);
+  } else {
+    _ySetDirection(!_SMYDirection);
+  }
 }
 
-void SM::xHizAyarla(int yavasHiz, int hizliHiz){
-  _xYavasHiz = yavasHiz;
-  _xHizliHiz = hizliHiz;
+void SM::xSetSpeed(int lowSpeed, int highSpeed) {
+  _xLowSpeed = lowSpeed;
+  _xHighSpeed = highSpeed;
 }
 
-void SM::yHizAyarla(int yavasHiz, int hizliHiz){
-  _yYavasHiz = yavasHiz;
-  _yHizliHiz = hizliHiz;
+void SM::ySetSpeed(int lowSpeed, int highSpeed) {
+  _yLowSpeed = lowSpeed;
+  _yHighSpeed = highSpeed;
 }
 
-void SM::git(int xGidilecekKonumunDerecesi, int yGidilecekKonumunDerecesi){
-  if(xGidilecekKonumunDerecesi > 309 || xGidilecekKonumunDerecesi < 0 || yGidilecekKonumunDerecesi > 124 || yGidilecekKonumunDerecesi < 0){
+void SM::move(int xDegreeOfDestination, int yDegreeOfDestination) {
+  if (xDegreeOfDestination > 309 || xDegreeOfDestination < 0 || yDegreeOfDestination > 124 || yDegreeOfDestination < 0) {
     return;
   }
-  
-  if(xGidilecekKonumunDerecesi != _xKonumDerecesi && yGidilecekKonumunDerecesi != _yKonumDerecesi){
-    _cifteHareket(xGidilecekKonumunDerecesi, yGidilecekKonumunDerecesi);
-  }else if(xGidilecekKonumunDerecesi != _xKonumDerecesi){
-    _xTekilHareket(xGidilecekKonumunDerecesi);
-  }else if(yGidilecekKonumunDerecesi != _yKonumDerecesi){
-    _yTekilHareket(yGidilecekKonumunDerecesi);
+
+  if (xDegreeOfDestination != _xPositionDegree && yDegreeOfDestination != _yPositionDegree) {
+    _doubleMove(xDegreeOfDestination, yDegreeOfDestination);
+  } else if (xDegreeOfDestination != _xPositionDegree) {
+    _xSingularMove(xDegreeOfDestination);
+  } else if (yDegreeOfDestination != _yPositionDegree) {
+    _ySingularMove(yDegreeOfDestination);
   }
 }

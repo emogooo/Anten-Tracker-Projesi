@@ -17,19 +17,12 @@ if isCommStarted:
             dataFromPython = input("Enter\n")
             arduino.write(dataFromPython.encode())
             startTime = time.time()
-            while time.time() - startTime < 2:
+            while time.time() - startTime < 0.5:
                 bytesToRead = arduino.inWaiting()
-                if bytesToRead < 1:
+                if bytesToRead < 5:
                     continue
                 dataFromArduino = arduino.read(bytesToRead)
-                print(dataFromArduino)
                 dataFromArduino = dataFromArduino.decode()
-                print(dataFromArduino)
-
-                #dataFromArduino = arduino.readline()
-                #print(dataFromArduino)
-                #dataFromArduino = dataFromArduino.decode()
-                #print(dataFromArduino)
                 
                 if "*0#" in dataFromArduino:
                     isTrackerEnable = False
@@ -37,17 +30,12 @@ if isCommStarted:
                     break
         else:
             bytesToRead = arduino.inWaiting()
-            if bytesToRead < 1:
+            if bytesToRead < 5:
                 continue
             dataFromArduino = arduino.read(bytesToRead)
-            print(dataFromArduino)
             dataFromArduino = dataFromArduino.decode()
             print(dataFromArduino)
-            
-            #dataFromArduino = arduino.readline()
-            #print(dataFromArduino)
-            #dataFromArduino = dataFromArduino.decode()
-            #print(dataFromArduino)
+
             if "*1#" in dataFromArduino or time.time() - disableTime > 15:
                 isTrackerEnable = True
 
