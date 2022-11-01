@@ -12,14 +12,18 @@ private:
   byte _SMYLowerDegreeLimitPin;
   byte _SMXDirection;
   byte _SMYDirection;
+  bool _xMoveControl;
+  bool _yMoveControl;
   int _xSpeed;
   int _ySpeed;
   int _xLowSpeed;
   int _xHighSpeed;
   int _yLowSpeed;
   int _yHighSpeed;
-  unsigned long _xAxisStepCount;
-  unsigned long _yAxisStepCount;
+  int _xStepCounter; //Manyetik histeresiz durumu için kullanılır.
+  int _yStepCounter; //Manyetik histeresiz durumu için kullanılır.
+  unsigned long _xAxisStepCount; // Kalibrasyon için kullanılır. 
+  unsigned long _yAxisStepCount; // Kalibrasyon için kullanılır.
   unsigned long _xAxisStepCountForOneDegree;
   unsigned long _yAxisStepCountForOneDegree;
   int _xPositionDegree;
@@ -32,14 +36,15 @@ private:
   unsigned long _yNumberOfStepsTaken;
   int _xAccelerationStepShare;
   int _yAccelerationStepShare;
-  int _xSpeedToChangePerStep;
-  int _ySpeedToChangePerStep;
+  int _xSpeedToChangePerStep; // İvmelenirken değişecek hız.
+  int _ySpeedToChangePerStep; // İvmelenirken değişecek hız.
   void _xTakeAStep();
   void _yTakeAStep();
   void _xDoubleMoveTakeAStep();
   void _yDoubleMoveTakeAStep();
   void _xSetDirection(byte direction);
   void _ySetDirection(byte direction);
+  void _changeDirection(bool control);
   void _xSingularMove(int degreeOfDestination);
   void _ySingularMove(int degreeOfDestination);
   void _doubleMove(int xDegreeOfDestination, int yDegreeOfDestination);
@@ -48,8 +53,9 @@ public:
   SM(byte SMXStepPin, byte SMXDirectionPin, byte SMYStepPin, byte SMYDirectionPin, byte SMXHighDegreeLimitPin, byte SMXLowerDegreeLimitPin, byte SMYHighDegreeLimitPin, byte SMYLowerDegreeLimitPin);
   void SMXCalibration();
   void SMYCalibration();
-  void changeDirection(bool control);
   void xSetSpeed(int lowSpeed, int highSpeed);
   void ySetSpeed(int lowSpeed, int highSpeed);
+  void emergencyStop(bool isMotorX);
+  void recalibration(bool isMotorX, bool isHighLimit, int lastDestination);
   void move(int xDegreeOfDestination, int yDegreeOfDestination);
 };

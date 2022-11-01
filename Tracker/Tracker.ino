@@ -22,20 +22,20 @@ rgb_lcd lcd;
 SM stepperMotors(SMXStepPin, SMXDirectionPin, SMYStepPin, SMYDirectionPin, SMXHighDegreeLimitPin, SMXLowerDegreeLimitPin, SMYHighDegreeLimitPin, SMYLowerDegreeLimitPin);
 
 String rawData;
-int degreeToGoMotorX = 0;
-int degreeToGoMotorY = 0;
-unsigned long lastWorkingTimeLimitX = 0;
-unsigned long lastWorkingTimeLimitY = 0;
 byte batteryLevel[8];
+int degreeToGoMotorX = 151;
+int degreeToGoMotorY = 0;
 float voltage;
-float lastVoltage;
-bool emergencyBuzzerControl;
+float lastVoltage = -1;
+bool emergencyBuzzerControl = false;
+bool interruptXControl = false;
+bool interruptYControl = false;
+bool isHighLimitXControl = false;
+bool isHighLimitYControl = false;
 
 void setup() {
   batteryLevel[0] = B01110;
   batteryLevel[7] = B11111;
-  lastVoltage = -1;
-  emergencyBuzzerControl = false;
   pinMode(calibrationButtonPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
   lcd.begin(16, 2);
@@ -43,8 +43,8 @@ void setup() {
   startSystem();
   attachInterrupt(interruptPinValue, interruptFunction, RISING);
   Serial.begin(9600);
-  printLCDMiddle("  Y          X  ", 0);
-  printLCDMiddle(" 0         155", 1);
+  printLCDMiddle("DiKEY      YATAY", 0);
+  printLCDMiddle("  0         151 ", 1);
 }
 
 void loop() {
@@ -64,35 +64,62 @@ void loop() {
   }
 
   if (digitalRead(parkButtonPin) == HIGH) {
+    printLCDMiddle("  0         151 ", 1);
     stepperMotors.move(151, 0);
-    printLCDMiddle(" 0         151", 1);
   }
 
   if (Serial.available()) {
     rawData = Serial.readString();
     if (proceedReceivedData()) {
       Serial.println("*0#");
-      printLCDMiddle((String(degreeToGoMotorY) + "          " + String(degreeToGoMotorX)), 1);
+      printLCDMiddle((String(degreeToGoMotorY) + "        " + String(degreeToGoMotorX)), 1);
       stepperMotors.move(degreeToGoMotorX, degreeToGoMotorY);
       Serial.println("*1#");
     }
   }
+
+  if (interruptXControl) {
+    stepperMotors.recalibration(true, isHighLimitXControl, degreeToGoMotorX);
+    interruptXControl = false;
+    if(isHighLimitXControl){
+      printLCDMiddle((String(degreeToGoMotorY) + "        309"), 1);
+    }else{
+      printLCDMiddle((String(degreeToGoMotorY) + "        0"), 1);
+    }
+    playPositiveSound();
+  }
+
+  if (interruptYControl) {
+    stepperMotors.recalibration(false, isHighLimitYControl, degreeToGoMotorY);
+    interruptYControl = false;
+    if(isHighLimitYControl){
+      printLCDMiddle(("124        " + String(degreeToGoMotorX)), 1);
+    }else{
+      printLCDMiddle(("0        " + String(degreeToGoMotorX)), 1);
+    }
+    playPositiveSound();
+  }
 }
 
 void interruptFunction() {
-  if (digitalRead(SMXHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000) {
-    stepperMotors.changeDirection(true);
-    lastWorkingTimeLimitX = millis();
-  } else if (digitalRead(SMXLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitX > 1000) {
-    stepperMotors.changeDirection(true);
-    lastWorkingTimeLimitX = millis();
-  } else if (digitalRead(SMYHighDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000) {
-    stepperMotors.changeDirection(false);
-    lastWorkingTimeLimitY = millis();
-  } else if (digitalRead(SMYLowerDegreeLimitPin) == HIGH && millis() - lastWorkingTimeLimitY > 1000) {
-    stepperMotors.changeDirection(false);
-    lastWorkingTimeLimitY = millis();
-  }
+    if (digitalRead(SMXHighDegreeLimitPin) == HIGH && !interruptXControl) {
+      interruptXControl = true;
+      isHighLimitXControl = true;
+      stepperMotors.emergencyStop(true);
+    } else if (digitalRead(SMXLowerDegreeLimitPin) == HIGH && !interruptXControl) {
+      interruptXControl = true;
+      isHighLimitXControl = false;
+      stepperMotors.emergencyStop(true);
+    }
+    if (digitalRead(SMYHighDegreeLimitPin) == HIGH && !interruptYControl) {
+      interruptYControl = true;
+      isHighLimitYControl = true;
+      stepperMotors.emergencyStop(false);
+    } else if (digitalRead(SMYLowerDegreeLimitPin) == HIGH && !interruptYControl) {
+      interruptYControl = true;
+      isHighLimitYControl = false;
+      stepperMotors.emergencyStop(false);
+    }
 }
 
 bool proceedReceivedData() {
@@ -198,19 +225,19 @@ void startSystem() {
   printLCDMiddle("ANTEN TRACKER", 0);
   printLCDMiddle("KALIBRASYON", 1);
   playBuzzer(500, 3);
-  printLCDMiddle("Y EKSENI", 0);
+  printLCDMiddle("DiKEY EKSEN", 0);
   printLCDMiddle("KALIBRASYON", 1);
   playBuzzer(500, 3);
   stepperMotors.SMYCalibration();
   playPositiveSound();
   bool buttonCalibrationControl = false;
-  printLCDMiddle("X EKSENI", 0);
+  printLCDMiddle("YATAY EKSEN", 0);
   printLCDMiddle("KALIBRASYON", 1);
   playBuzzer(500, 3);
   stepperMotors.SMXCalibration();
   stepperMotors.xSetSpeed(250, 90);
   stepperMotors.ySetSpeed(500, 150);
-  stepperMotors.move(155, 0);
+  stepperMotors.move(151, 0);
   while (true) {
     printLCDMiddle("Sehpayi IHA'ya", 1);
     playBuzzer(500, 3);

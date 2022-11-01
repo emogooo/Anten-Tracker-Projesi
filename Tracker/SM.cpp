@@ -39,46 +39,6 @@ void SM::_yDoubleMoveTakeAStep() {
   digitalWrite(_SMYStepPin, LOW);
 }
 
-void SM::SMXCalibration() {
-  _xSetDirection(HIGH);
-  _xSpeed = 30;
-  _xAxisStepCount = 0;
-  while (digitalRead(_SMXHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir
-    _xTakeAStep();
-  }
-  _xSetDirection(!_SMXDirection);
-  while (digitalRead(_SMXLowerDegreeLimitPin) == LOW) {
-    _xTakeAStep();
-    _xAxisStepCount++;
-  }
-  _xSetDirection(!_SMXDirection);
-  for (int i = 0; i < 500; i++) {  // Limit Butona baskı yapmaması için 500 adım geri döner. Burada ki 500 adım kör noktadır.
-    _xTakeAStep();
-  }
-  _xAxisStepCountForOneDegree = (_xAxisStepCount - 1000) / 310;
-  _xPositionDegree = 0;
-}
-
-void SM::SMYCalibration() {
-  _ySetDirection(HIGH);
-  _ySpeed = 30;
-  _yAxisStepCount = 0;
-  while (digitalRead(_SMYHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir. Yukarı hareket ediyor.
-    _yTakeAStep();
-  }
-  _ySetDirection(!_SMYDirection);
-  while (digitalRead(_SMYLowerDegreeLimitPin) == LOW) {  // Aşağı hareket ediyor.
-    _yTakeAStep();
-    _yAxisStepCount++;
-  }
-  _ySetDirection(!_SMYDirection);
-  for (int i = 0; i < 1000; i++) {  // Limit Butona baskı yapmaması için 1000 adım geri döner. Burada ki 1000 adım kör noktadır.
-    _yTakeAStep();
-  }
-  _yAxisStepCountForOneDegree = (_yAxisStepCount - 2000) / 125;
-  _yPositionDegree = 0;
-}
-
 void SM::_xSetDirection(byte direction) {
   _SMXDirection = direction;
   digitalWrite(_SMXDirectionPin, _SMXDirection);
@@ -87,6 +47,14 @@ void SM::_xSetDirection(byte direction) {
 void SM::_ySetDirection(byte direction) {
   _SMYDirection = direction;
   digitalWrite(_SMYDirectionPin, _SMYDirection);
+}
+
+void SM::_changeDirection(bool control) {
+  if (control) {
+    _xSetDirection(!_SMXDirection);
+  } else {
+    _ySetDirection(!_SMYDirection);
+  }
 }
 
 void SM::_xSingularMove(int degreeOfDestination) {
@@ -101,11 +69,11 @@ void SM::_xSingularMove(int degreeOfDestination) {
   // Atılacak adımın belirlenmesi.
   _xStepToGo = _xDegreeToGo * _xAxisStepCountForOneDegree;
   // Hızların belirlenmesi.
-  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket minimum 1 derecelik adım sayısına(880 adım) göre ivmelenir.
+  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket 1 derecelik adım sayısına(880 adım) göre ivmelenir.
     _xAccelerationStepShare = _xAxisStepCountForOneDegree / 4;
     _xSpeedToChangePerStep = 1;
     _xSpeed = _xLowSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
-  } else {  // Uzun mesafe hareket minimum 5 derece (4400 adım). 600-600 ivme adım payı.
+  } else {  // Uzun mesafe hareket 5 derece (4400 adım). 600-600 ivme adım payı.
     _xAccelerationStepShare = 600;
     _xSpeedToChangePerStep = 1;
     _xSpeed = _xHighSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
@@ -139,11 +107,11 @@ void SM::_ySingularMove(int degreeOfDestination) {
   // Atılacak adımın belirlenmesi.
   _yStepToGo = _yDegreeToGo * _yAxisStepCountForOneDegree;
   // Hızların belirlenmesi.
-  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32*50 için 1 derecelik adım sayısına göre ivmelenir.
     _yAccelerationStepShare = _yAxisStepCountForOneDegree / 4;
     _ySpeedToChangePerStep = 1;
     _ySpeed = _yLowSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
-  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+  } else {  // Uzun mesafe hareket 1/32*50 için 1200 adım. 600-600 ivme adım payı.
     _yAccelerationStepShare = 600;
     _ySpeedToChangePerStep = 1;
     _ySpeed = _yHighSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
@@ -184,20 +152,20 @@ void SM::_doubleMove(int xDegreeOfDestination, int yDegreeOfDestination) {
   _xStepToGo = _xDegreeToGo * _xAxisStepCountForOneDegree;
   _yStepToGo = _yDegreeToGo * _yAxisStepCountForOneDegree;
   //Hızların belirlenmesi.
-  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+  if (_xDegreeToGo < 5) {  // Kısa mesafe hareket 1/32*50 için 1 derecelik adım sayısına göre ivmelenir.
     _xAccelerationStepShare = _xAxisStepCountForOneDegree / 4;
     _xSpeedToChangePerStep = 1;
     _xSpeed = _xLowSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
-  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+  } else {  // Uzun mesafe hareket 1/32*50 için minimum adım. 600-600 ivme adım payı.
     _xAccelerationStepShare = 600;
     _xSpeedToChangePerStep = 1;
     _xSpeed = _xHighSpeed + (_xAccelerationStepShare * _xSpeedToChangePerStep);
   }
-  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32 için minimum 1 derecelik adım sayısına göre ivmelenir.
+  if (_yDegreeToGo < 5) {  // Kısa mesafe hareket 1/32*50 için 1 derecelik adım sayısına göre ivmelenir.
     _yAccelerationStepShare = _yAxisStepCountForOneDegree / 4;
     _ySpeedToChangePerStep = 1;
     _ySpeed = _yLowSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
-  } else {  // Uzun mesafe hareket 1/32 için minimum 1200 adım. 600-600 ivme adım payı.
+  } else {  // Uzun mesafe hareket 1/32*50 için 1200 adım. 600-600 ivme adım payı.
     _yAccelerationStepShare = 600;
     _ySpeedToChangePerStep = 1;
     _ySpeed = _yHighSpeed + (_yAccelerationStepShare * _ySpeedToChangePerStep);
@@ -205,8 +173,8 @@ void SM::_doubleMove(int xDegreeOfDestination, int yDegreeOfDestination) {
   // Hareket fonksiyonu.
   _xNumberOfStepsTaken = 0;
   _yNumberOfStepsTaken = 0;
-  while ((_xStepToGo - _xNumberOfStepsTaken) > 0 || (_yStepToGo - _yNumberOfStepsTaken) > 0) {
-    if ((_xStepToGo - _xNumberOfStepsTaken) > 0) {
+  while (((_xStepToGo - _xNumberOfStepsTaken) > 0 && _xMoveControl) || ((_yStepToGo - _yNumberOfStepsTaken) > 0 && _yMoveControl)) {
+    if ((_xStepToGo - _xNumberOfStepsTaken) > 0  && _xMoveControl) {
       if (_xNumberOfStepsTaken < _xAccelerationStepShare) {
         _xSpeed = _xSpeed - _xSpeedToChangePerStep;
       } else if (_xStepToGo - _xNumberOfStepsTaken < _xAccelerationStepShare) {
@@ -220,7 +188,7 @@ void SM::_doubleMove(int xDegreeOfDestination, int yDegreeOfDestination) {
       }
       delayMicroseconds(_xSpeed);
     }
-    if ((_yStepToGo - _yNumberOfStepsTaken) > 0) {
+    if ((_yStepToGo - _yNumberOfStepsTaken) > 0 && _yMoveControl) {
       if (_yNumberOfStepsTaken < _yAccelerationStepShare) {
         _ySpeed = _ySpeed - _ySpeedToChangePerStep;
       } else if ((_yStepToGo - _yNumberOfStepsTaken) < _yAccelerationStepShare) {
@@ -240,12 +208,56 @@ void SM::_doubleMove(int xDegreeOfDestination, int yDegreeOfDestination) {
   _yPositionDegree = yDegreeOfDestination;
 }
 
-void SM::changeDirection(bool control) {
-  if (control) {
-    _xSetDirection(!_SMXDirection);
-  } else {
-    _ySetDirection(!_SMYDirection);
+void SM::SMXCalibration() {
+  _xSetDirection(HIGH);
+  _xSpeed = 30;
+  _xAxisStepCount = 0;
+  while (digitalRead(_SMXHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir
+    _xTakeAStep();
   }
+  _xSetDirection(!_SMXDirection);
+  while (digitalRead(_SMXLowerDegreeLimitPin) == LOW) {
+    _xTakeAStep();
+    _xAxisStepCount++;
+  }
+  _xSetDirection(!_SMXDirection);
+  for (int i = 0; i < 500; i++) {  // Limit Butona baskı yapmaması için 500 adım geri döner. Burada ki 500 adım kör noktadır.
+    _xTakeAStep();
+  }
+  _xAxisStepCountForOneDegree = (_xAxisStepCount - 1000) / 310;
+  _xPositionDegree = 0;
+  _xMoveControl = true;
+}
+
+void SM::SMYCalibration() {
+  _ySetDirection(HIGH);
+  _ySpeed = 30;
+  _yAxisStepCount = 0;
+  while (digitalRead(_SMYHighDegreeLimitPin) == LOW) {  // Yönden kaynaklı problem olabilir. Yukarı hareket ediyor.
+    _yTakeAStep();
+  }
+  _ySetDirection(!_SMYDirection);
+  while (digitalRead(_SMYLowerDegreeLimitPin) == LOW) {  // Aşağı hareket ediyor.
+    _yTakeAStep();
+    _yAxisStepCount++;
+  }
+  _yStepCounter = 0;
+  _ySetDirection(!_SMYDirection);
+  while (digitalRead(_SMYLowerDegreeLimitPin) == HIGH) {
+    _yTakeAStep();
+    _yStepCounter++;
+  }
+  for (int i = 0; i < 500; i++) {  // Limit Butona baskı yapmaması için 1000 adım geri döner. Burada ki 1000 adım kör noktadır.
+    _yTakeAStep();
+  }
+  _yStepCounter = _yStepCounter + 500;
+  _ySetDirection(!_SMYDirection);
+  for (int i = 0; i < _yStepCounter - 1000; i++) {  // Limit Butona baskı yapmaması için 1000 adım geri döner. Burada ki 1000 adım kör noktadır.
+    _yTakeAStep();
+  }
+  _yAxisStepCountForOneDegree = (_yAxisStepCount - 2000) / 125;
+  _yPositionDegree = 0;
+  _yMoveControl = true;
 }
 
 void SM::xSetSpeed(int lowSpeed, int highSpeed) {
@@ -256,6 +268,75 @@ void SM::xSetSpeed(int lowSpeed, int highSpeed) {
 void SM::ySetSpeed(int lowSpeed, int highSpeed) {
   _yLowSpeed = lowSpeed;
   _yHighSpeed = highSpeed;
+}
+
+void SM::emergencyStop(bool isMotorX) {
+  if (isMotorX) {
+    _xMoveControl = false;
+    _xNumberOfStepsTaken = 1;
+    _xStepToGo = 1;
+    _xAccelerationStepShare = 0;
+  } else {
+    _yMoveControl = false;
+    _yNumberOfStepsTaken = 1;
+    _yStepToGo = 1;
+    _yAccelerationStepShare = 0;
+  }
+}
+
+void SM::recalibration(bool isMotorX, bool isHighLimit, int lastDestination) {
+  _changeDirection(isMotorX);
+  if (isMotorX) {
+    _xSpeed = 30;
+    _xStepCounter = 0;
+    if (isHighLimit) {
+      while (digitalRead(_SMXHighDegreeLimitPin) == HIGH) {
+        _xTakeAStep();
+        _xStepCounter++;
+      }
+      _xPositionDegree = 309;
+    } else {
+      while (digitalRead(_SMXLowerDegreeLimitPin) == HIGH) {
+        _xTakeAStep();
+        _xStepCounter++;
+      }
+      _xPositionDegree = 0;
+    }
+    for (int i = 0; i < 500; i++) {
+      _xTakeAStep();
+    }
+    _xStepCounter = _xStepCounter + 500;
+    _changeDirection(isMotorX);
+    for (int i = 0; i < _xStepCounter - 500; i++) {
+      _xTakeAStep();
+    }
+    _xMoveControl = true;
+  } else {
+    _ySpeed = 30;
+    _yStepCounter = 0;
+    if (isHighLimit) {
+      while (digitalRead(_SMYHighDegreeLimitPin) == HIGH) {
+        _yTakeAStep();
+        _yStepCounter++;
+      }
+      _yPositionDegree = 124;
+    } else {
+      while (digitalRead(_SMYLowerDegreeLimitPin) == HIGH) {
+        _yTakeAStep();
+        _yStepCounter++;
+      }
+      _yPositionDegree = 0;
+    }
+    for (int i = 0; i < 500; i++) {
+      _yTakeAStep();
+    }
+    _yStepCounter = _yStepCounter + 500;
+    _changeDirection(isMotorX);
+    for (int i = 0; i < _yStepCounter - 1000; i++) {
+      _yTakeAStep();
+    }
+    _yMoveControl = true;
+  }
 }
 
 void SM::move(int xDegreeOfDestination, int yDegreeOfDestination) {
