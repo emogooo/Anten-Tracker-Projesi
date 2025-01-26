@@ -3,7 +3,7 @@ DIR Pini : D6
 Step Pini : D5
 Limit Pinlerinin karþýsýna geçtiðimizde,
 310 Derece (sol) Limit Pini : 10 S
-0 Derece (sað) Limit Pini : 9 B
+0 Derece (sag) Limit Pini : 9 B
 
 Dikey Eksen Pinleri
 DIR Pini : D8
